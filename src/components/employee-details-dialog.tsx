@@ -9,7 +9,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Calendar } from '@/components/ui/calendar';
-import { useStore } from '@/lib/store';
+import useStore from '@/lib/store';
 import type { Employee, AttendanceStatus } from '@/types';
 import {
   startOfMonth,
@@ -37,8 +37,20 @@ export function EmployeeDetailsDialog({
   open,
   onOpenChange,
 }: EmployeeDetailsDialogProps) {
-  const { attendance } = useStore();
+  const attendance = useStore(state => state.attendance);
   const [currentMonth, setCurrentMonth] = useState(new Date());
+
+  if (!attendance) {
+    return (
+       <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Loading...</DialogTitle>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
+    )
+  }
 
   const daysInMonth = eachDayOfInterval({
     start: startOfMonth(currentMonth),

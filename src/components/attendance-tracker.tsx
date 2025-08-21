@@ -32,7 +32,7 @@ import {
   User,
 } from 'lucide-react';
 import { format, isSunday } from 'date-fns';
-import { useStore } from '@/lib/store';
+import useStore from '@/lib/store';
 import type { Employee } from '@/types';
 import { EmployeeDetailsDialog } from './employee-details-dialog';
 
@@ -45,12 +45,11 @@ export function AttendanceTracker() {
     null
   );
 
-  const {
-    employees,
-    attendance,
-    addEmployee,
-    toggleAttendance,
-  } = useStore();
+  const employees = useStore(state => state.employees);
+  const attendance = useStore(state => state.attendance);
+  const addEmployee = useStore(state => state.addEmployee);
+  const toggleAttendance = useStore(state => state.toggleAttendance);
+
 
   const handleAddEmployee = (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,6 +59,20 @@ export function AttendanceTracker() {
       setIsAddingEmployee(false);
     }
   };
+
+  if (!employees || !attendance) {
+    // Handle loading state while waiting for client-side hydration
+    return (
+       <Card>
+        <CardHeader>
+           <CardTitle>Loading Attendance...</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p>Please wait...</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   const filteredEmployees = employees.filter(emp =>
     emp.name.toLowerCase().includes(searchTerm.toLowerCase())

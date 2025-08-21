@@ -1,7 +1,7 @@
 // src/components/export-dialog.tsx
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/select';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader2, Sparkles, AlertTriangle, CheckCircle, FileDown } from 'lucide-react';
-import { useStore } from '@/lib/store';
+import useStore from '@/lib/store';
 import { exportToExcel, getMonthsWithData } from '@/lib/utils';
 import { checkDataIntegrityAction } from '@/app/actions';
 import type { AssessDataIntegrityOutput } from '@/ai/flows/data-integrity-tool';
@@ -31,15 +31,23 @@ type ExportDialogProps = {
 };
 
 export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
-  const { employees, attendance } = useStore();
+  const employees = useStore(state => state.employees);
+  const attendance = useStore(state => state.attendance);
+
   const [selectedMonth, setSelectedMonth] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [assessmentResult, setAssessmentResult] = useState<AssessDataIntegrityOutput | null>(null);
 
-  const availableMonths = useMemo(() => getMonthsWithData(attendance), [attendance]);
+  const availableMonths = useMemo(() => attendance ? getMonthsWithData(attendance) : [], [attendance]);
+  
+  // Reset assessment when month changes
+  useEffect(() => {
+    setAssessmentResult(null);
+  }, [selectedMonth]);
+
 
   const handleIntegrityCheck = async () => {
-    if (!selectedMonth) return;
+    if (!selectedMonth || !employees || !attendance) return;
 
     setIsLoading(true);
     setAssessmentResult(null);
@@ -49,7 +57,8 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
     const endDate = new Date(parseInt(year), parseInt(month), 0);
 
     let formattedData = '';
-    for (let d = startDate; d <= endDate; d.setDate(d.getDate() + 1)) {
+    // Use a new date object for iteration to avoid mutation issues
+    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
         const dateStr = d.toISOString().split('T')[0];
         if (attendance[dateStr]) {
             const dailyRecords = Object.entries(attendance[dateStr])
@@ -61,9 +70,6 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
             formattedData += `Date: ${dateStr}, ${dailyRecords}\n`;
         }
     }
-    
-    // Reset date to start of month after loop
-    d.setDate(1); 
 
     const result = await checkDataIntegrityAction(formattedData);
     setAssessmentResult(result);
@@ -71,7 +77,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
   };
 
   const handleExport = () => {
-    if (!selectedMonth) return;
+    if (!selectedMonth || !employees || !attendance) return;
     exportToExcel(selectedMonth, employees, attendance);
   };
   
@@ -86,6 +92,18 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
       resetState();
     }
     onOpenChange(isOpen);
+  }
+  
+  if (!employees || !attendance) {
+    return (
+       <Dialog open={open} onOpenChange={handleOpenChange}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Loading...</DialogTitle>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
+    )
   }
 
   return (
@@ -143,10 +161,10 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
         <DialogFooter>
           <Button
             onClick={handleExport}
-            disabled={!selectedMonth || !assessmentResult}
+            disabled={!selectedMonth}
           >
             <FileDown className="mr-2 h-4 w-4" />
-            {assessmentResult?.isConsistent ? "Export Report" : "Export Anyway"}
+            Export Report
           </Button>
         </DialogFooter>
       </DialogContent>
