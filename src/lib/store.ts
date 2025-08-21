@@ -1,8 +1,8 @@
 // src/lib/store.ts
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
+import { persist, createJSONStorage, StateStorage } from 'zustand/middleware';
 import type { Employee, AttendanceData, AttendanceStatus } from '@/types';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useSyncExternalStore } from 'react';
 
 // Dummy Data
 const initialEmployees: Employee[] = [
@@ -24,6 +24,13 @@ type Actions = {
 };
 
 type StoreType = State & Actions;
+
+// To handle server-side rendering, we create a dummy storage that does nothing.
+const dummyStorage: StateStorage = {
+  getItem: () => null,
+  setItem: () => {},
+  removeItem: () => {},
+};
 
 const useStoreBase = create<StoreType>()(
   persist(
@@ -59,27 +66,19 @@ const useStoreBase = create<StoreType>()(
     }),
     {
       name: 'sitescribe-storage',
-      storage: createJSONStorage(() => localStorage),
+      // On the server, use dummy storage. On the client, use localStorage.
+      storage: createJSONStorage(() => (typeof window !== 'undefined' ? localStorage : dummyStorage)),
     }
   )
 );
 
+// This is the correct way to use a zustand store with server-side rendering.
 const useStore = <T>(selector: (state: StoreType) => T) => {
-    const [store, setStore] = useState<T | undefined>(undefined);
-  
-    useEffect(() => {
-      // This ensures that we're only accessing the store on the client-side
-      // after hydration is complete.
-      const unsub = useStoreBase.subscribe(
-        (state) => setStore(selector(state)),
-        true // Fire immediately to get the initial state
-      );
-      return unsub;
-    }, [selector]);
-  
-    // On the server, and on the client before hydration, return undefined.
-    // The components using this hook should handle this undefined state gracefully.
-    return store;
-  };
+  return useSyncExternalStore(
+    useStoreBase.subscribe,
+    () => selector(useStoreBase.getState()),
+    () => selector(useStoreBase.getState())
+  );
+};
 
 export default useStore;
