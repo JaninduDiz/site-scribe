@@ -1,7 +1,7 @@
 // src/components/attendance-tracker.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useStore } from '@/lib/store';
@@ -33,12 +33,16 @@ import type { Employee, AttendanceData, AttendanceStatus } from '@/types';
 import { EmployeeDetailsDialog } from './employee-details-dialog';
 
 export function AttendanceTracker() {
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [searchTerm, setSearchTerm] = useState('');
   
   const { employees, attendance, initialized } = useStore();
   
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+
+  useEffect(() => {
+    setSelectedDate(new Date());
+  }, []);
 
   const toggleAttendance = async (employeeId: string, date: string, status: AttendanceStatus) => {
     try {
@@ -61,7 +65,7 @@ export function AttendanceTracker() {
   };
 
 
-  if (!initialized) {
+  if (!initialized || !selectedDate) {
     return (
        <Card>
         <CardHeader>
