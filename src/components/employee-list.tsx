@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react';
 import { collection, onSnapshot, doc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import useStore from '@/lib/store';
 import {
   Card,
   CardContent,
@@ -29,7 +30,7 @@ import {
 } from "@/components/ui/alert-dialog"
 
 export function EmployeeList() {
-  const [employees, setEmployees] = useState<Employee[]>([]);
+  const { employees, setEmployees } = useStore();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -54,7 +55,7 @@ export function EmployeeList() {
       }
     );
     return () => unsub();
-  }, []);
+  }, [setEmployees]);
   
   const handleEdit = (employee: Employee) => {
     setSelectedEmployee(employee);

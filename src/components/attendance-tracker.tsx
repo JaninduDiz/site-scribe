@@ -2,8 +2,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { collection, onSnapshot } from 'firebase/firestore';
+import { collection, onSnapshot, doc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import useStore from '@/lib/store';
 import {
   Card,
   CardContent,
@@ -28,7 +29,6 @@ import {
   Loader2,
 } from 'lucide-react';
 import { format, isSunday } from 'date-fns';
-import { setDoc, doc } from 'firebase/firestore';
 import type { Employee, AttendanceData, AttendanceStatus } from '@/types';
 import { EmployeeDetailsDialog } from './employee-details-dialog';
 
@@ -36,8 +36,7 @@ export function AttendanceTracker() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [searchTerm, setSearchTerm] = useState('');
   
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [attendance, setAttendance] = useState<AttendanceData>({});
+  const { employees, attendance, setEmployees, setAttendance } = useStore();
   
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -50,7 +49,7 @@ export function AttendanceTracker() {
       (snapshot) => {
         const fetchedEmployees = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Employee));
         setEmployees(fetchedEmployees);
-        setIsLoading(false);
+        if (isLoading) setIsLoading(false);
       },
       (err) => {
         console.error("Error fetching employees:", err);
@@ -78,7 +77,7 @@ export function AttendanceTracker() {
       unsubEmployees();
       unsubAttendance();
     };
-  }, []);
+  }, [setEmployees, setAttendance, isLoading]);
 
   const toggleAttendance = async (employeeId: string, date: string, status: AttendanceStatus) => {
     try {
