@@ -9,8 +9,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Calendar } from '@/components/ui/calendar';
-import useStore from '@/lib/store';
-import type { Employee, AttendanceStatus } from '@/types';
+import type { Employee, AttendanceData, AttendanceStatus } from '@/types';
 import {
   startOfMonth,
   endOfMonth,
@@ -28,16 +27,17 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 type EmployeeDetailsDialogProps = {
   employee: Employee;
+  attendance: AttendanceData;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 };
 
 export function EmployeeDetailsDialog({
   employee,
+  attendance,
   open,
   onOpenChange,
 }: EmployeeDetailsDialogProps) {
-  const attendance = useStore(state => state.attendance);
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
   if (!attendance) {

@@ -2,6 +2,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { collection, onSnapshot } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import {
   Card,
   CardContent,
@@ -34,7 +36,7 @@ import {
 } from 'lucide-react';
 import { format, isSunday } from 'date-fns';
 import useStore from '@/lib/store';
-import type { Employee } from '@/types';
+import type { Employee, AttendanceData, AttendanceStatus } from '@/types';
 import { EmployeeDetailsDialog } from './employee-details-dialog';
 
 export function AttendanceTracker() {
@@ -42,16 +44,51 @@ export function AttendanceTracker() {
   const [searchTerm, setSearchTerm] = useState('');
   const [newEmployeeName, setNewEmployeeName] = useState('');
   const [isAddingEmployee, setIsAddingEmployee] = useState(false);
-  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(
-    null
-  );
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const { employees, attendance, addEmployee, toggleAttendance, initialize, isLoading, error } = useStore();
+  const { employees, attendance, addEmployee, toggleAttendance, setEmployees, setAttendance } = useStore();
 
   useEffect(() => {
-    const unsubscribe = initialize();
-    return () => unsubscribe();
-  }, [initialize]);
+    setIsLoading(true);
+    const unsubEmployees = onSnapshot(
+      collection(db, 'employees'),
+      (snapshot) => {
+        const fetchedEmployees = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Employee));
+        setEmployees(fetchedEmployees);
+        if (isLoading) setIsLoading(false);
+      },
+      (err) => {
+        console.error("Error fetching employees:", err);
+        setError("Failed to load employees.");
+        setIsLoading(false);
+      }
+    );
+
+    const unsubAttendance = onSnapshot(
+      collection(db, 'attendance'),
+      (snapshot) => {
+        const fetchedAttendance: AttendanceData = {};
+        snapshot.forEach((doc) => {
+            fetchedAttendance[doc.id] = doc.data() as { [employeeId: string]: AttendanceStatus };
+        });
+        setAttendance(fetchedAttendance);
+        if (isLoading) setIsLoading(false);
+      },
+      (err) => {
+        console.error("Error fetching attendance:", err);
+        setError("Failed to load attendance data.");
+        setIsLoading(false);
+      }
+    );
+
+    return () => {
+      unsubEmployees();
+      unsubAttendance();
+    };
+  }, [setEmployees, setAttendance]);
 
 
   const handleAddEmployee = async (e: React.FormEvent) => {
@@ -221,6 +258,7 @@ export function AttendanceTracker() {
       {selectedEmployee && (
         <EmployeeDetailsDialog
           employee={selectedEmployee}
+          attendance={attendance}
           open={!!selectedEmployee}
           onOpenChange={() => setSelectedEmployee(null)}
         />

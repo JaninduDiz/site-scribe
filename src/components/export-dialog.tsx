@@ -31,7 +31,10 @@ type ExportDialogProps = {
 };
 
 export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
-  const { employees, attendance } = useStore();
+  const { employees, attendance } = useStore(state => ({
+    employees: state.employees,
+    attendance: state.attendance,
+  }));
 
   const [selectedMonth, setSelectedMonth] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
