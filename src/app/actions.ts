@@ -1,80 +1,66 @@
-// src/app/actions.ts
-'use server';
-
-import { assessDataIntegrity } from '@/ai/flows/data-integrity-tool';
-import type { AssessDataIntegrityOutput } from '@/ai/flows/data-integrity-tool';
-import { getFirestore } from 'firebase-admin/firestore';
-import { initializeApp, getApps, cert } from 'firebase-admin/app';
-
-// Initialize Firebase Admin SDK
-if (!getApps().length) {
-  // Check for service account credentials in environment variables
-  if (process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
-    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
-    initializeApp({
-      credential: cert(serviceAccount)
-    });
-  } else {
-    // Fallback for local development without service account key
-    // This will have limited permissions
-    initializeApp();
-  }
-}
-
-const db = getFirestore();
-
-
-async function getMonthlyData(month: string): Promise<string> {
-    const [year, monthNum] = month.split('-').map(Number);
-    const startDate = new Date(year, monthNum - 1, 1).toISOString().split('T')[0];
-    const endDate = new Date(year, monthNum, 1).toISOString().split('T')[0];
-
-    const employeesSnapshot = await db.collection('employees').get();
-    const employees = employeesSnapshot.docs.reduce((acc, doc) => {
-        acc[doc.id] = doc.data().name;
-        return acc;
-    }, {} as {[id: string]: string});
-
-    const attendanceSnapshot = await db.collection('attendance')
-        .where(db.app.firestore.FieldPath.documentId(), '>=', startDate)
-        .where(db.app.firestore.FieldPath.documentId(), '<', endDate)
-        .get();
-        
-    let formattedData = '';
-    attendanceSnapshot.forEach(doc => {
-        const date = doc.id;
-        const records = doc.data();
-        const dailyRecords = Object.entries(records)
-            .map(([empId, status]) => {
-                const empName = employees[empId] || 'Unknown Employee';
-                return `${empName}: ${status}`;
-            })
-            .join(', ');
-        formattedData += `Date: ${date}, ${dailyRecords}\n`;
-    });
-
-    return formattedData;
-}
-
-
-export async function checkDataIntegrityAction(
-  month: string // Expects 'yyyy-MM' format
-): Promise<AssessDataIntegrityOutput> {
-  try {
-    const attendanceData = await getMonthlyData(month);
-    if (!attendanceData) {
-        return {
-            assessment: 'No attendance data found for the selected month.',
-            isConsistent: true,
-        }
-    }
-    const result = await assessDataIntegrity({ attendanceData });
-    return result;
-  } catch (error) {
-    console.error('Error assessing data integrity:', error);
-    return {
-      assessment: 'An error occurred while assessing data integrity. Please try again.',
-      isConsistent: false,
-    };
+{
+  "name": "nextn",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack -p 9002",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "^4.1.3",
+    "@radix-ui/react-accordion": "^1.2.3",
+    "@radix-ui/react-alert-dialog": "^1.1.6",
+    "@radix-ui/react-avatar": "^1.1.3",
+    "@radix-ui/react-checkbox": "^1.1.4",
+    "@radix-ui/react-collapsible": "^1.1.11",
+    "@radix-ui/react-dialog": "^1.1.6",
+    "@radix-ui/react-dropdown-menu": "^2.1.6",
+    "@radix-ui/react-label": "^2.1.2",
+    "@radix-ui/react-menubar": "^1.1.6",
+    "@radix-ui/react-popover": "^1.1.6",
+    "@radix-ui/react-progress": "^1.1.2",
+    "@radix-ui/react-radio-group": "^1.2.3",
+    "@radix-ui/react-scroll-area": "^1.2.3",
+    "@radix-ui/react-select": "^2.1.6",
+    "@radix-ui/react-separator": "^1.1.2",
+    "@radix-ui/react-slider": "^1.2.3",
+    "@radix-ui/react-slot": "^1.2.3",
+    "@radix-ui/react-switch": "^1.1.3",
+    "@radix-ui/react-tabs": "^1.1.3",
+    "@radix-ui/react-toast": "^1.2.6",
+    "@radix-ui/react-tooltip": "^1.1.8",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "date-fns": "^3.6.0",
+    "dotenv": "^16.5.0",
+    "embla-carousel-react": "^8.6.0",
+    "file-saver": "^2.0.5",
+    "firebase": "^10.12.2",
+    "firebase-admin": "^12.1.1",
+    "lucide-react": "^0.475.0",
+    "next": "15.3.3",
+    "patch-package": "^8.0.0",
+    "react": "^18.3.1",
+    "react-day-picker": "^8.10.1",
+    "react-dom": "^18.3.1",
+    "react-hook-form": "^7.54.2",
+    "recharts": "^2.15.1",
+    "tailwind-merge": "^3.0.1",
+    "tailwindcss-animate": "^1.0.7",
+    "xlsx": "^0.18.5",
+    "zod": "^3.24.2",
+    "zustand": "^4.5.2"
+  },
+  "devDependencies": {
+    "@types/file-saver": "^2.0.7",
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "postcss": "^8",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5"
   }
 }
