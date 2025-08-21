@@ -130,7 +130,7 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
             </Alert>
           )}
         </div>
-        <DialogFooter>
+        <DialogFooter className="justify-center">
           <Button
             onClick={handleExport}
             disabled={!selectedMonth}
