@@ -2,7 +2,7 @@ import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, getMonth, getYear } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
 import type { Employee, AttendanceData } from '@/types';
 
 export function cn(...inputs: ClassValue[]) {
@@ -22,7 +22,7 @@ export function exportToExcel(
   const headers = ['Employee Name', ...daysInMonth.map(day => format(day, 'dd-MMM'))];
   
   const data = employees.map(employee => {
-    const row = [employee.name];
+    const row: (string | number)[] = [employee.name];
     daysInMonth.forEach(day => {
       const dateStr = format(day, 'yyyy-MM-dd');
       const status = attendance[dateStr]?.[employee.id];
@@ -45,14 +45,14 @@ export function exportToExcel(
 export function getMonthsWithData(attendance: AttendanceData): { value: string, label: string }[] {
     const months = new Set<string>();
     Object.keys(attendance).forEach(dateStr => {
-        const date = new Date(dateStr);
+        const date = new Date(dateStr + "T00:00:00"); // Avoid timezone issues
         months.add(format(date, 'yyyy-MM'));
     });
 
     return Array.from(months)
         .map(monthStr => ({
             value: monthStr,
-            label: format(new Date(monthStr), 'MMMM yyyy'),
+            label: format(new Date(monthStr + "-01T00:00:00"), 'MMMM yyyy'),
         }))
         .sort((a, b) => b.value.localeCompare(a.value)); // Sort descending
 }
