@@ -107,9 +107,10 @@ export function EmployeeList() {
                   <CardContent className="p-4 flex items-center justify-between">
                     <div className="flex items-center gap-4">
                        <User className="h-6 w-6 text-muted-foreground" />
-                       <div>
-                           <p className="font-semibold">{employee.name}</p>
-                           <p className="text-sm text-muted-foreground">{employee.phone || 'No phone'}</p>
+                       <div className="text-sm">
+                           <p className="font-semibold text-base">{employee.name}</p>
+                           <p className="text-muted-foreground">{employee.phone || 'No phone'}</p>
+                           <p className="text-muted-foreground">{employee.address || 'No address'}</p>
                        </div>
                     </div>
                     <div className="flex items-center gap-2">
