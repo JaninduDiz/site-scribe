@@ -75,7 +75,7 @@ export function AttendanceTracker() {
   }
 
   const filteredEmployees = employees.filter(emp =>
-    emp.name.toLowerCase().includes(searchTerm.toLowerCase())
+    emp?.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const formattedDate = format(selectedDate, 'yyyy-MM-dd');
