@@ -18,13 +18,14 @@ export function exportToExcel(
   const [year, month] = selectedMonth.split('-').map(Number);
   const startDate = startOfMonth(new Date(year, month - 1));
   const endDate = endOfMonth(new Date(year, month - 1));
-  const daysInMonth = eachDayOfInterval({ start: startDate, end: endDate }).filter(day => !isSunday(day));
+  const daysInMonth = eachDayOfInterval({ start: startDate, end: endDate });
 
-  // Headers are employee names
   const headers = ['Date', ...employees.map(emp => emp.name)];
   
-  // Data rows are for each day
   const dataRows = daysInMonth.map(day => {
+    if (isSunday(day)) {
+      return [format(day, 'dd-MMM-yyyy'), ...Array(employees.length).fill('Sunday')];
+    }
     const dateStr = format(day, 'yyyy-MM-dd');
     const formattedDay = format(day, 'dd-MMM-yyyy');
     const row: (string | number)[] = [formattedDay];
@@ -37,7 +38,6 @@ export function exportToExcel(
     return row;
   });
 
-  // Calculate totals
   const totalPresent: (string | number)[] = ['Total Present'];
   const totalAbsent: (string | number)[] = ['Total Absent'];
 
@@ -45,25 +45,25 @@ export function exportToExcel(
     let presentCount = 0;
     let absentCount = 0;
     daysInMonth.forEach(day => {
-      const dateStr = format(day, 'yyyy-MM-dd');
-      const status = attendance[dateStr]?.[employee.id];
-      if (status === 'present') {
-        presentCount++;
-      } else if (status === 'absent') {
-        absentCount++;
+      if (!isSunday(day)) {
+        const dateStr = format(day, 'yyyy-MM-dd');
+        const status = attendance[dateStr]?.[employee.id];
+        if (status === 'present') {
+          presentCount++;
+        } else if (status === 'absent') {
+          absentCount++;
+        }
       }
     });
     totalPresent.push(presentCount);
     totalAbsent.push(absentCount);
   });
 
-  const worksheetData = [headers, ...dataRows, totalPresent, totalAbsent];
+  const worksheetData = [headers, ...dataRows, [], totalPresent, totalAbsent]; // Added a blank row for separation
   const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
-
-  // Set column widths
+  
   const colWidths = [{wch: 15}, ...employees.map(e => ({wch: (e.name?.length || 10) + 5}))];
   worksheet['!cols'] = colWidths;
-
 
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, 'Attendance');
@@ -77,7 +77,6 @@ export function exportToExcel(
 export function getMonthsWithData(attendance: AttendanceData): { value: string, label: string }[] {
     const months = new Set<string>();
     Object.keys(attendance).forEach(dateStr => {
-        // Ensure the date string is a valid format before processing
         const date = new Date(dateStr);
         if (isValid(date)) {
             months.add(format(date, 'yyyy-MM'));
@@ -86,11 +85,11 @@ export function getMonthsWithData(attendance: AttendanceData): { value: string, 
 
     return Array.from(months)
         .map(monthStr => {
-            const date = new Date(monthStr + "-01T12:00:00"); // Use midday to avoid timezone issues
+            const date = new Date(monthStr + "-01T12:00:00"); 
             return {
                 value: monthStr,
                 label: format(date, 'MMMM yyyy'),
             }
         })
-        .sort((a, b) => b.value.localeCompare(a.value)); // Sort descending
+        .sort((a, b) => b.value.localeCompare(a.value));
 }
