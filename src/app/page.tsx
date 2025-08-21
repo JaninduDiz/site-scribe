@@ -12,7 +12,7 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState('attendance');
 
   return (
-    <div className="flex min-h-screen w-full flex-col">
+    <div className="flex min-h-screen w-full flex-col" style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)'}}>
       <Header />
       <main className="flex flex-1 flex-col">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col flex-1">
