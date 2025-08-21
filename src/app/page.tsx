@@ -7,12 +7,14 @@ import { EmployeeList } from '@/components/employee-list';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Users, CalendarCheck } from 'lucide-react';
 import { useState } from 'react';
+import { StoreInitializer } from '@/components/store-initializer';
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState('attendance');
 
   return (
     <div className="flex min-h-screen w-full flex-col" style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)'}}>
+      <StoreInitializer />
       <Header />
       <main className="flex flex-1 flex-col">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col flex-1">

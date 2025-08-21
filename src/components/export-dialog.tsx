@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/select';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Loader2, Sparkles, AlertTriangle, CheckCircle, FileDown } from 'lucide-react';
-import useStore from '@/lib/store';
+import { useStore } from '@/lib/store';
 import { exportToExcel, getMonthsWithData } from '@/lib/utils';
 import { checkDataIntegrityAction } from '@/app/actions';
 import type { AssessDataIntegrityOutput } from '@/ai/flows/data-integrity-tool';

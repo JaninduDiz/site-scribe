@@ -1,10 +1,10 @@
 // src/components/attendance-tracker.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
-import { collection, onSnapshot, doc, setDoc } from 'firebase/firestore';
+import { useState } from 'react';
+import { doc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import useStore from '@/lib/store';
+import { useStore } from '@/lib/store';
 import {
   Card,
   CardContent,
@@ -36,48 +36,9 @@ export function AttendanceTracker() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [searchTerm, setSearchTerm] = useState('');
   
-  const { employees, attendance, setEmployees, setAttendance } = useStore();
+  const { employees, attendance, initialized } = useStore();
   
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
-
-  useEffect(() => {
-    setIsLoading(true);
-    const unsubEmployees = onSnapshot(
-      collection(db, 'employees'),
-      (snapshot) => {
-        const fetchedEmployees = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Employee));
-        setEmployees(fetchedEmployees);
-        if (isLoading) setIsLoading(false);
-      },
-      (err) => {
-        console.error("Error fetching employees:", err);
-        setError("Failed to load employees.");
-        setIsLoading(false);
-      }
-    );
-
-    const unsubAttendance = onSnapshot(
-      collection(db, 'attendance'),
-      (snapshot) => {
-        const fetchedAttendance: AttendanceData = {};
-        snapshot.forEach((doc) => {
-            fetchedAttendance[doc.id] = doc.data() as { [employeeId: string]: AttendanceStatus };
-        });
-        setAttendance(fetchedAttendance);
-      },
-      (err) => {
-        console.error("Error fetching attendance:", err);
-        setError("Failed to load attendance data.");
-      }
-    );
-
-    return () => {
-      unsubEmployees();
-      unsubAttendance();
-    };
-  }, [setEmployees, setAttendance, isLoading]);
 
   const toggleAttendance = async (employeeId: string, date: string, status: AttendanceStatus) => {
     try {
@@ -100,7 +61,7 @@ export function AttendanceTracker() {
   };
 
 
-  if (isLoading) {
+  if (!initialized) {
     return (
        <Card>
         <CardHeader>
@@ -112,20 +73,7 @@ export function AttendanceTracker() {
       </Card>
     );
   }
-
-  if (error) {
-     return (
-       <Card>
-        <CardHeader>
-           <CardTitle className="text-destructive">Error</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p>{error}</p>
-        </CardContent>
-      </Card>
-    );
-  }
-
+  
   const filteredEmployees = employees.filter(emp =>
     emp.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );

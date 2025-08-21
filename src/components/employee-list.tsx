@@ -1,10 +1,10 @@
 // src/components/employee-list.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
-import { collection, onSnapshot, doc, deleteDoc } from 'firebase/firestore';
+import { useState } from 'react';
+import { doc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import useStore from '@/lib/store';
+import { useStore } from '@/lib/store';
 import {
   Card,
   CardContent,
@@ -30,33 +30,11 @@ import {
 } from "@/components/ui/alert-dialog"
 
 export function EmployeeList() {
-  const { employees, setEmployees } = useStore();
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { employees, initialized } = useStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
 
-  useEffect(() => {
-    setIsLoading(true);
-    const unsub = onSnapshot(
-      collection(db, 'employees'),
-      (snapshot) => {
-        const fetchedEmployees = snapshot.docs.map(
-          (doc) => ({ id: doc.id, ...doc.data() } as Employee)
-        );
-        setEmployees(fetchedEmployees);
-        setIsLoading(false);
-      },
-      (err) => {
-        console.error('Error fetching employees:', err);
-        setError('Failed to load employees.');
-        setIsLoading(false);
-      }
-    );
-    return () => unsub();
-  }, [setEmployees]);
-  
   const handleEdit = (employee: Employee) => {
     setSelectedEmployee(employee);
     setIsDialogOpen(true);
@@ -82,7 +60,7 @@ export function EmployeeList() {
     emp.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  if (isLoading) {
+  if (!initialized) {
     return (
       <Card>
         <CardHeader>
@@ -90,19 +68,6 @@ export function EmployeeList() {
         </CardHeader>
         <CardContent className="flex justify-center items-center p-8">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (error) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-destructive">Error</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p>{error}</p>
         </CardContent>
       </Card>
     );

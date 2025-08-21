@@ -5,6 +5,7 @@ import type { Employee, AttendanceData } from '@/types';
 type State = {
   employees: Employee[];
   attendance: AttendanceData;
+  initialized: boolean;
 };
 
 type Actions = {
@@ -12,11 +13,10 @@ type Actions = {
   setAttendance: (attendance: AttendanceData) => void;
 };
 
-const useStore = create<State & Actions>((set) => ({
+export const useStore = create<State & Actions>((set) => ({
   employees: [],
   attendance: {},
+  initialized: false,
   setEmployees: (employees) => set({ employees }),
   setAttendance: (attendance) => set({ attendance }),
 }));
-
-export default useStore;
