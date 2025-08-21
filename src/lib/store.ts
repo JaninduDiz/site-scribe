@@ -64,26 +64,27 @@ const useStoreBase = create<StoreType>()(
   )
 );
 
-// This is a common pattern for handling Zustand hydration with Next.js
+// Custom hook to deal with hydration issues in Next.js
 const useStore = <T>(selector: (state: StoreType) => T) => {
-  const [state, setState] = useState<T | undefined>(undefined);
+  const store = useStoreBase(selector);
+  const [isHydrated, setIsHydrated] = useState(false);
 
   useEffect(() => {
-    // This effect runs on the client after hydration, so we can safely access the store.
-    const unsubscribe = useStoreBase.subscribe(() => {
-      setState(selector(useStoreBase.getState()));
-    });
-    // Set the initial state on the client
-    setState(selector(useStoreBase.getState()));
-    
-    return () => unsubscribe();
-  }, [selector]);
+    setIsHydrated(true);
+  }, []);
+  
+  const initialState = useStoreBase.getState();
 
-  // On the server, and before hydration on the client, we can return a default/initial state
-  // or undefined. Returning undefined will cause consumers to handle the loading state.
-  return state;
+  // Return server-side state until client is hydrated
+  if (!isHydrated) {
+    // For functions, we can't return an initial state, so we return a no-op function
+    if (typeof selector(initialState) === 'function') {
+      return (() => {}) as T;
+    }
+    return selector(initialState);
+  }
+
+  return store;
 };
 
-// We also export the base store for times we might need to access it outside of a React component
-export { useStoreBase };
 export default useStore;
