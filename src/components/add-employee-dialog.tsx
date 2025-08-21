@@ -16,8 +16,7 @@ import { Label } from '@/components/ui/label';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { doc, setDoc, collection } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { supabase } from '@/lib/supabase';
 import type { Employee } from '@/types';
 import { Loader2 } from 'lucide-react';
 
@@ -59,7 +58,7 @@ export function AddEmployeeDialog({
             reset({
               name: employee.name,
               phone: employee.phone || '',
-              age: employee.age
+              age: employee.age || undefined
             });
         } else {
             reset({ name: '', phone: '', age: undefined });
@@ -71,15 +70,18 @@ export function AddEmployeeDialog({
   const onSubmit = async (data: z.infer<typeof employeeSchema>) => {
     setIsSubmitting(true);
     try {
-      const docRef = employee ? doc(db, 'employees', employee.id) : doc(collection(db, 'employees'));
-      
-      const employeeData: Partial<Employee> = {
+      const employeeData = {
+          ...(employee && { id: employee.id }),
           name: data.name,
-          ...(data.phone && { phone: data.phone }),
-          ...(data.age && { age: data.age }),
-      }
+          phone: data.phone || null,
+          age: data.age || null
+      };
 
-      await setDoc(docRef, employeeData, { merge: true });
+      const { error } = await supabase.from('employees').upsert(employeeData);
+
+      if (error) {
+          throw error;
+      }
 
       setIsOpen(false);
     } catch (error) {
@@ -92,7 +94,7 @@ export function AddEmployeeDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] mx-4">
         <DialogHeader>
           <DialogTitle>{employee ? 'Edit Employee' : 'Add New Employee'}</DialogTitle>
           <DialogDescription>

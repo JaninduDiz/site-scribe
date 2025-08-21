@@ -2,8 +2,7 @@
 'use client';
 
 import { useState } from 'react';
-import { doc, deleteDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { supabase } from '@/lib/supabase';
 import { useStore } from '@/lib/store';
 import {
   Card,
@@ -47,8 +46,9 @@ export function EmployeeList() {
   
   const handleDelete = async (employeeId: string) => {
       try {
-        await deleteDoc(doc(db, 'employees', employeeId));
-        // Note: Real-time listener will auto-update the UI
+        const { error } = await supabase.from('employees').delete().eq('id', employeeId);
+        if (error) throw error;
+        // Note: Real-time subscription will auto-update the UI
       } catch (error) {
           console.error("Error deleting employee: ", error);
           // Here you might want to show a toast to the user

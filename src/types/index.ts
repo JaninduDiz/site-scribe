@@ -1,11 +1,7 @@
 // src/types/index.ts
+import type { Database } from "./supabase";
 
-export type Employee = {
-  id: string;
-  name: string;
-  phone?: string;
-  age?: number;
-};
+export type Employee = Database['public']['Tables']['employees']['Row'];
 
 export type AttendanceStatus = 'present' | 'absent';
 
@@ -16,3 +12,5 @@ export type AttendanceRecord = {
 export type AttendanceData = {
   [date: string]: AttendanceRecord; // date is in 'yyyy-MM-dd' format
 };
+
+export type DbAttendanceRecord = Database['public']['Tables']['attendance']['Row'];

@@ -2,8 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { doc, setDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { supabase } from '@/lib/supabase';
 import { useStore } from '@/lib/store';
 import {
   Card,
@@ -46,19 +45,24 @@ export function AttendanceTracker() {
 
   const toggleAttendance = async (employeeId: string, date: string, status: AttendanceStatus) => {
     try {
-      const attendanceRef = doc(db, 'attendance', date);
-      const currentAttendance = attendance[date] || {};
-      const newStatus = currentAttendance[employeeId] === status ? null : status;
+        const currentStatus = attendance[date]?.[employeeId];
+        const newStatus = currentStatus === status ? null : status;
 
-      const updatedRecord = { ...currentAttendance };
-      if (newStatus === null) {
-        delete updatedRecord[employeeId];
-      } else {
-        updatedRecord[employeeId] = newStatus;
-      }
-      
-      await setDoc(attendanceRef, updatedRecord, { merge: true });
-
+        if (newStatus === null) {
+            // Delete the record
+            const { error } = await supabase.from('attendance')
+                .delete()
+                .match({ date: date, employee_id: employeeId });
+            if (error) throw error;
+        } else {
+            // Upsert the record
+            const { error } = await supabase.from('attendance').upsert({
+                date: date,
+                employee_id: employeeId,
+                status: newStatus,
+            }, { onConflict: 'date,employee_id' });
+            if (error) throw error;
+        }
     } catch (error) {
       console.error("Error toggling attendance:", error);
     }
