@@ -7,8 +7,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description: 'Employee attendance tracking for construction sites.',
     start_url: '/',
     display: 'standalone',
-    background_color: '#E1F5FE',
-    theme_color: '#29ABE2',
+    background_color: '#FEFBF7',
+    theme_color: '#D4A373',
     icons: [
       {
         src: "https://placehold.co/192x192.png",

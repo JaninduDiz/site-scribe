@@ -104,7 +104,7 @@ export function EmployeeDetailsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-md mx-4">
         <DialogHeader>
           <DialogTitle>{employee.name}</DialogTitle>
           <DialogDescription>Attendance Overview</DialogDescription>
