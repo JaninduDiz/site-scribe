@@ -20,36 +20,28 @@ import {
 } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
-import {
   Search,
   Calendar as CalendarIcon,
   Check,
   X,
-  UserPlus,
-  ChevronDown,
   User,
   Loader2,
 } from 'lucide-react';
 import { format, isSunday } from 'date-fns';
-import useStore from '@/lib/store';
+import { setDoc, doc } from 'firebase/firestore';
 import type { Employee, AttendanceData, AttendanceStatus } from '@/types';
 import { EmployeeDetailsDialog } from './employee-details-dialog';
 
 export function AttendanceTracker() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [searchTerm, setSearchTerm] = useState('');
-  const [newEmployeeName, setNewEmployeeName] = useState('');
-  const [isAddingEmployee, setIsAddingEmployee] = useState(false);
-  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [attendance, setAttendance] = useState<AttendanceData>({});
   
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const { employees, attendance, addEmployee, toggleAttendance, setEmployees, setAttendance } = useStore();
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
 
   useEffect(() => {
     setIsLoading(true);
@@ -58,7 +50,7 @@ export function AttendanceTracker() {
       (snapshot) => {
         const fetchedEmployees = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Employee));
         setEmployees(fetchedEmployees);
-        if (isLoading) setIsLoading(false);
+        setIsLoading(false);
       },
       (err) => {
         console.error("Error fetching employees:", err);
@@ -75,12 +67,10 @@ export function AttendanceTracker() {
             fetchedAttendance[doc.id] = doc.data() as { [employeeId: string]: AttendanceStatus };
         });
         setAttendance(fetchedAttendance);
-        if (isLoading) setIsLoading(false);
       },
       (err) => {
         console.error("Error fetching attendance:", err);
         setError("Failed to load attendance data.");
-        setIsLoading(false);
       }
     );
 
@@ -88,17 +78,28 @@ export function AttendanceTracker() {
       unsubEmployees();
       unsubAttendance();
     };
-  }, [setEmployees, setAttendance]);
+  }, []);
 
+  const toggleAttendance = async (employeeId: string, date: string, status: AttendanceStatus) => {
+    try {
+      const attendanceRef = doc(db, 'attendance', date);
+      const currentAttendance = attendance[date] || {};
+      const newStatus = currentAttendance[employeeId] === status ? null : status;
 
-  const handleAddEmployee = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newEmployeeName.trim()) {
-      await addEmployee(newEmployeeName.trim());
-      setNewEmployeeName('');
-      setIsAddingEmployee(false);
+      const updatedRecord = { ...currentAttendance };
+      if (newStatus === null) {
+        delete updatedRecord[employeeId];
+      } else {
+        updatedRecord[employeeId] = newStatus;
+      }
+      
+      await setDoc(attendanceRef, updatedRecord, { merge: true });
+
+    } catch (error) {
+      console.error("Error toggling attendance:", error);
     }
   };
+
 
   if (isLoading) {
     return (
@@ -127,13 +128,14 @@ export function AttendanceTracker() {
   }
 
   const filteredEmployees = employees.filter(emp =>
-    emp?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+    emp.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const formattedDate = format(selectedDate, 'yyyy-MM-dd');
   const todaysAttendance = attendance[formattedDate] || {};
 
   return (
+    <>
     <Card>
       <CardHeader>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -164,36 +166,15 @@ export function AttendanceTracker() {
             </PopoverContent>
           </Popover>
         </div>
-        <div className="mt-4 flex flex-col sm:flex-row gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Search employees..."
-              className="pl-8"
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-            />
-          </div>
-          <Collapsible open={isAddingEmployee} onOpenChange={setIsAddingEmployee}>
-            <CollapsibleTrigger asChild>
-              <Button variant="outline" className="w-full sm:w-auto">
-                <UserPlus className="mr-2 h-4 w-4" />
-                Add Employee
-                <ChevronDown className="h-4 w-4 ml-2" />
-              </Button>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="mt-2">
-              <form onSubmit={handleAddEmployee} className="flex gap-2">
-                <Input
-                  placeholder="New employee name..."
-                  value={newEmployeeName}
-                  onChange={e => setNewEmployeeName(e.target.value)}
-                />
-                <Button type="submit">Add</Button>
-              </form>
-            </CollapsibleContent>
-          </Collapsible>
+        <div className="mt-4 relative flex-1">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="search"
+            placeholder="Search employees..."
+            className="pl-8"
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+          />
         </div>
       </CardHeader>
       <CardContent>
@@ -250,19 +231,20 @@ export function AttendanceTracker() {
             ))
           ) : (
             <p className="text-muted-foreground col-span-full text-center">
-              No employees found. Add one to get started.
+              No employees found. Add one in the Employees tab.
             </p>
           )}
         </div>
       </CardContent>
-      {selectedEmployee && (
-        <EmployeeDetailsDialog
-          employee={selectedEmployee}
-          attendance={attendance}
-          open={!!selectedEmployee}
-          onOpenChange={() => setSelectedEmployee(null)}
-        />
-      )}
     </Card>
+    {selectedEmployee && (
+      <EmployeeDetailsDialog
+        employee={selectedEmployee}
+        attendance={attendance}
+        open={!!selectedEmployee}
+        onOpenChange={() => setSelectedEmployee(null)}
+      />
+    )}
+    </>
   );
 }

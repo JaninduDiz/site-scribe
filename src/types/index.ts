@@ -3,6 +3,8 @@
 export type Employee = {
   id: string;
   name: string;
+  phone?: string;
+  age?: number;
 };
 
 export type AttendanceStatus = 'present' | 'absent';
