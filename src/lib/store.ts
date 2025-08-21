@@ -2,6 +2,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { Employee, AttendanceData, AttendanceStatus } from '@/types';
+import { useState, useEffect } from 'react';
 
 // Dummy Data
 const initialEmployees: Employee[] = [
@@ -61,32 +62,26 @@ const useStoreInitializer = create<State & Actions>()(
   )
 );
 
-
-// Custom hook to deal with hydration issues in Next.js
-export const useStore = <T>(selector: (state: State & Actions) => T) => {
+const useStore = ((selector) => {
     const store = useStoreInitializer(selector);
     const [isHydrated, setIsHydrated] = useState(false);
     useEffect(() => {
         setIsHydrated(true);
     }, []);
-    return isHydrated ? store : (selector as any)({ employees: [], attendance: {} });
-};
 
-// We need to export the raw store for non-hook usage if needed, but for components, use useStore
-// And we need to add a "hack" to avoid using the hook selector outside of components
-const initialStoreForHook = {
-    employees: [],
-    attendance: {},
-    addEmployee: () => {},
-    toggleAttendance: () => {},
-}
-const useStoreSelector = (selector: (state: State & Actions) => any) => selector(initialStoreForHook);
+    const initialState = {
+        employees: initialEmployees,
+        attendance: {},
+    };
 
-// To avoid 'useState' and 'useEffect' import errors on the server, we need to create a dummy store for SSR.
-// The real `useStore` will be used on the client.
-import { useState, useEffect } from 'react';
+    if (!isHydrated) {
+        if(typeof selector === 'function') {
+            return selector(initialState as any);
+        }
+        return initialState;
+    }
 
-const store = typeof window !== 'undefined' ? useStoreInitializer : useStoreSelector;
-const useActualStore = typeof window !== 'undefined' ? useStore : useStore;
+    return store;
+});
 
-export { useActualStore as useStore };
+export { useStore };
