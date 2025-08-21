@@ -1,0 +1,155 @@
+// src/components/export-dialog.tsx
+'use client';
+
+import { useState, useMemo } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Loader2, Sparkles, AlertTriangle, CheckCircle, FileDown } from 'lucide-react';
+import { useStore } from '@/lib/store';
+import { exportToExcel, getMonthsWithData } from '@/lib/utils';
+import { checkDataIntegrityAction } from '@/app/actions';
+import type { AssessDataIntegrityOutput } from '@/ai/flows/data-integrity-tool';
+
+type ExportDialogProps = {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+};
+
+export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
+  const { employees, attendance } = useStore();
+  const [selectedMonth, setSelectedMonth] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [assessmentResult, setAssessmentResult] = useState<AssessDataIntegrityOutput | null>(null);
+
+  const availableMonths = useMemo(() => getMonthsWithData(attendance), [attendance]);
+
+  const handleIntegrityCheck = async () => {
+    if (!selectedMonth) return;
+
+    setIsLoading(true);
+    setAssessmentResult(null);
+
+    const [year, month] = selectedMonth.split('-');
+    const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
+    const endDate = new Date(parseInt(year), parseInt(month), 0);
+
+    let formattedData = '';
+    for (let d = startDate; d <= endDate; d.setDate(d.getDate() + 1)) {
+        const dateStr = d.toISOString().split('T')[0];
+        if (attendance[dateStr]) {
+            const dailyRecords = Object.entries(attendance[dateStr])
+                .map(([empId, status]) => {
+                    const empName = employees.find(e => e.id === empId)?.name || 'Unknown';
+                    return `${empName}: ${status}`;
+                })
+                .join(', ');
+            formattedData += `Date: ${dateStr}, ${dailyRecords}\n`;
+        }
+    }
+    
+    // Reset date to start of month after loop
+    d.setDate(1); 
+
+    const result = await checkDataIntegrityAction(formattedData);
+    setAssessmentResult(result);
+    setIsLoading(false);
+  };
+
+  const handleExport = () => {
+    if (!selectedMonth) return;
+    exportToExcel(selectedMonth, employees, attendance);
+  };
+  
+  const resetState = () => {
+    setSelectedMonth('');
+    setIsLoading(false);
+    setAssessmentResult(null);
+  };
+
+  const handleOpenChange = (isOpen: boolean) => {
+    if(!isOpen) {
+      resetState();
+    }
+    onOpenChange(isOpen);
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Export Attendance Report</DialogTitle>
+          <DialogDescription>
+            Select a month to export. An AI-powered data integrity check is available.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+          <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select a month" />
+            </SelectTrigger>
+            <SelectContent>
+              {availableMonths.map(month => (
+                <SelectItem key={month.value} value={month.value}>
+                  {month.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Button
+            onClick={handleIntegrityCheck}
+            disabled={!selectedMonth || isLoading}
+            className="w-full"
+          >
+            {isLoading ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Sparkles className="mr-2 h-4 w-4" />
+            )}
+            Check Data Integrity
+          </Button>
+
+          {assessmentResult && (
+            <Alert variant={assessmentResult.isConsistent ? 'default' : 'destructive'}>
+              {assessmentResult.isConsistent ? (
+                <CheckCircle className="h-4 w-4" />
+              ) : (
+                <AlertTriangle className="h-4 w-4" />
+              )}
+              <AlertTitle>
+                {assessmentResult.isConsistent
+                  ? 'Data is Consistent'
+                  : 'Inconsistency Detected'}
+              </AlertTitle>
+              <AlertDescription>{assessmentResult.assessment}</AlertDescription>
+            </Alert>
+          )}
+        </div>
+        <DialogFooter>
+          <Button
+            onClick={handleExport}
+            disabled={!selectedMonth || !assessmentResult}
+          >
+            <FileDown className="mr-2 h-4 w-4" />
+            {assessmentResult?.isConsistent ? "Export Report" : "Export Anyway"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
