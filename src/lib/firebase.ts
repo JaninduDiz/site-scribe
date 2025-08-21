@@ -3,12 +3,12 @@ import { initializeApp, getApp, getApps } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
-  projectId: 'sitescribe-v6um9',
-  appId: '1:811749818450:web:15e99c80c6767041ac9f8b',
-  storageBucket: 'sitescribe-v6um9.firebasestorage.app',
-  apiKey: 'AIzaSyCM544iSvibKEpydGfPGbsF4tVm1YsaUuw',
-  authDomain: 'sitescribe-v6um9.firebaseapp.com',
-  messagingSenderId: '811749818450',
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
 // Initialize Firebase
