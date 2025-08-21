@@ -1,84 +1,128 @@
 // src/lib/store.ts
 import { create } from 'zustand';
-import { persist, createJSONStorage, StateStorage } from 'zustand/middleware';
 import type { Employee, AttendanceData, AttendanceStatus } from '@/types';
-import { useState, useEffect, useSyncExternalStore } from 'react';
-
-// Dummy Data
-const initialEmployees: Employee[] = [
-  { id: '1', name: 'John Doe' },
-  { id: '2', name: 'Jane Smith' },
-  { id: '3', name: 'Mike Johnson' },
-  { id: '4', name: 'Emily Davis' },
-  { id: '5', name: 'Chris Wilson' },
-];
+import {
+  collection,
+  doc,
+  getDocs,
+  setDoc,
+  deleteDoc,
+  writeBatch,
+  onSnapshot,
+} from 'firebase/firestore';
+import { db } from './firebase';
 
 type State = {
   employees: Employee[];
   attendance: AttendanceData;
+  isLoading: boolean;
+  error: string | null;
 };
 
 type Actions = {
-  addEmployee: (name: string) => void;
-  toggleAttendance: (employeeId: string, date: string, status: AttendanceStatus) => void;
+  initialize: () => () => void; // Returns the unsubscribe function
+  addEmployee: (name: string) => Promise<void>;
+  toggleAttendance: (
+    employeeId: string,
+    date: string,
+    status: AttendanceStatus
+  ) => Promise<void>;
+  getAttendanceForMonth: (month: string) => Promise<AttendanceData>;
 };
 
 type StoreType = State & Actions;
 
-// To handle server-side rendering, we create a dummy storage that does nothing.
-const dummyStorage: StateStorage = {
-  getItem: () => null,
-  setItem: () => {},
-  removeItem: () => {},
-};
+const useStore = create<StoreType>((set, get) => ({
+  employees: [],
+  attendance: {},
+  isLoading: true,
+  error: null,
 
-const useStoreBase = create<StoreType>()(
-  persist(
-    (set, get) => ({
-      employees: initialEmployees,
-      attendance: {},
-
-      addEmployee: (name) => {
-        const newEmployee: Employee = {
-          id: String(Date.now()), // Use a more unique ID
-          name,
-        };
-        set((state) => ({ employees: [...state.employees, newEmployee] }));
+  initialize: () => {
+    const unsubEmployees = onSnapshot(
+      collection(db, 'employees'),
+      (snapshot) => {
+        const employees = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Employee));
+        set({ employees, isLoading: false });
       },
+      (error) => {
+        console.error("Error fetching employees:", error);
+        set({ error: "Failed to load employees.", isLoading: false });
+      }
+    );
 
-      toggleAttendance: (employeeId, date, status) => {
-        set((state) => {
-          const newAttendance = { ...state.attendance };
-          if (!newAttendance[date]) {
-            newAttendance[date] = {};
-          }
-          
-          if (newAttendance[date][employeeId] === status) {
-            // If clicking the same status again, clear it (mark as not recorded)
-            delete newAttendance[date][employeeId];
-          } else {
-            newAttendance[date][employeeId] = status;
-          }
-
-          return { attendance: newAttendance };
+    const unsubAttendance = onSnapshot(
+      collection(db, 'attendance'),
+      (snapshot) => {
+        const attendance: AttendanceData = {};
+        snapshot.forEach((doc) => {
+            attendance[doc.id] = doc.data() as { [employeeId: string]: AttendanceStatus };
         });
+        set({ attendance, isLoading: false });
       },
-    }),
-    {
-      name: 'sitescribe-storage',
-      // On the server, use dummy storage. On the client, use localStorage.
-      storage: createJSONStorage(() => (typeof window !== 'undefined' ? localStorage : dummyStorage)),
-    }
-  )
-);
+      (error) => {
+        console.error("Error fetching attendance:", error);
+        set({ error: "Failed to load attendance.", isLoading: false });
+      }
+    );
+    
+    // Return a function that unsubscribes from both listeners
+    return () => {
+      unsubEmployees();
+      unsubAttendance();
+    };
+  },
 
-// This is the correct way to use a zustand store with server-side rendering.
-const useStore = <T>(selector: (state: StoreType) => T) => {
-  return useSyncExternalStore(
-    useStoreBase.subscribe,
-    () => selector(useStoreBase.getState()),
-    () => selector(useStoreBase.getState())
-  );
-};
+  addEmployee: async (name) => {
+    if (!name.trim()) return;
+    try {
+      const newEmployeeRef = doc(collection(db, 'employees'));
+      const newEmployee: Employee = {
+        id: newEmployeeRef.id,
+        name,
+      };
+      await setDoc(newEmployeeRef, { name }); // Only store name, id is the doc id
+    } catch (error) {
+      console.error("Error adding employee:", error);
+    }
+  },
+
+  toggleAttendance: async (employeeId, date, status) => {
+    try {
+      const attendanceRef = doc(db, 'attendance', date);
+      const currentAttendance = get().attendance[date] || {};
+      
+      const newStatus = currentAttendance[employeeId] === status ? null : status;
+
+      const updatedRecord = { ...currentAttendance };
+      if (newStatus === null) {
+        delete updatedRecord[employeeId];
+      } else {
+        updatedRecord[employeeId] = newStatus;
+      }
+      
+      await setDoc(attendanceRef, updatedRecord);
+
+    } catch (error) {
+      console.error("Error toggling attendance:", error);
+    }
+  },
+  
+  // This function might be needed for the export feature to fetch specific month data
+  getAttendanceForMonth: async (month) => {
+      // Assuming month is in 'yyyy-MM' format
+      // Firestore queries for date ranges can be complex. For simplicity,
+      // we'll rely on the already subscribed data. If performance becomes an issue,
+      // a direct query would be better.
+      const allAttendance = get().attendance;
+      const monthlyAttendance: AttendanceData = {};
+      for(const date in allAttendance) {
+          if (date.startsWith(month)) {
+              monthlyAttendance[date] = allAttendance[date];
+          }
+      }
+      return monthlyAttendance;
+  }
+}));
 
 export default useStore;

@@ -31,8 +31,7 @@ type ExportDialogProps = {
 };
 
 export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
-  const employees = useStore(state => state.employees);
-  const attendance = useStore(state => state.attendance);
+  const { employees, attendance } = useStore();
 
   const [selectedMonth, setSelectedMonth] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
@@ -47,31 +46,13 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
 
 
   const handleIntegrityCheck = async () => {
-    if (!selectedMonth || !employees || !attendance) return;
+    if (!selectedMonth) return;
 
     setIsLoading(true);
     setAssessmentResult(null);
-
-    const [year, month] = selectedMonth.split('-');
-    const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
-    const endDate = new Date(parseInt(year), parseInt(month), 0);
-
-    let formattedData = '';
-    // Use a new date object for iteration to avoid mutation issues
-    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-        const dateStr = d.toISOString().split('T')[0];
-        if (attendance[dateStr]) {
-            const dailyRecords = Object.entries(attendance[dateStr])
-                .map(([empId, status]) => {
-                    const empName = employees.find(e => e.id === empId)?.name || 'Unknown';
-                    return `${empName}: ${status}`;
-                })
-                .join(', ');
-            formattedData += `Date: ${dateStr}, ${dailyRecords}\n`;
-        }
-    }
-
-    const result = await checkDataIntegrityAction(formattedData);
+    
+    // The server action will now fetch its own data from Firestore
+    const result = await checkDataIntegrityAction(selectedMonth);
     setAssessmentResult(result);
     setIsLoading(false);
   };
@@ -94,18 +75,6 @@ export function ExportDialog({ open, onOpenChange }: ExportDialogProps) {
     onOpenChange(isOpen);
   }
   
-  if (!employees || !attendance) {
-    return (
-       <Dialog open={open} onOpenChange={handleOpenChange}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Loading...</DialogTitle>
-          </DialogHeader>
-        </DialogContent>
-      </Dialog>
-    )
-  }
-
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent>

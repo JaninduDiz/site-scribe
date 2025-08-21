@@ -1,7 +1,7 @@
 // src/components/attendance-tracker.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -30,6 +30,7 @@ import {
   UserPlus,
   ChevronDown,
   User,
+  Loader2,
 } from 'lucide-react';
 import { format, isSunday } from 'date-fns';
 import useStore from '@/lib/store';
@@ -45,30 +46,44 @@ export function AttendanceTracker() {
     null
   );
 
-  const employees = useStore(state => state.employees);
-  const attendance = useStore(state => state.attendance);
-  const addEmployee = useStore(state => state.addEmployee);
-  const toggleAttendance = useStore(state => state.toggleAttendance);
+  const { employees, attendance, addEmployee, toggleAttendance, initialize, isLoading, error } = useStore();
+
+  useEffect(() => {
+    const unsubscribe = initialize();
+    return () => unsubscribe();
+  }, [initialize]);
 
 
-  const handleAddEmployee = (e: React.FormEvent) => {
+  const handleAddEmployee = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newEmployeeName.trim()) {
-      addEmployee(newEmployeeName.trim());
+      await addEmployee(newEmployeeName.trim());
       setNewEmployeeName('');
       setIsAddingEmployee(false);
     }
   };
 
-  if (!employees || !attendance) {
-    // Handle loading state while waiting for client-side hydration
+  if (isLoading) {
     return (
        <Card>
         <CardHeader>
            <CardTitle>Loading Attendance...</CardTitle>
         </CardHeader>
+        <CardContent className="flex justify-center items-center p-8">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+     return (
+       <Card>
+        <CardHeader>
+           <CardTitle className="text-destructive">Error</CardTitle>
+        </CardHeader>
         <CardContent>
-          <p>Please wait...</p>
+          <p>{error}</p>
         </CardContent>
       </Card>
     );
@@ -198,7 +213,7 @@ export function AttendanceTracker() {
             ))
           ) : (
             <p className="text-muted-foreground col-span-full text-center">
-              No employees found.
+              No employees found. Add one to get started.
             </p>
           )}
         </div>
