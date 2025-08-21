@@ -64,27 +64,22 @@ const useStoreBase = create<StoreType>()(
   )
 );
 
-// Custom hook to deal with hydration issues in Next.js
 const useStore = <T>(selector: (state: StoreType) => T) => {
-  const store = useStoreBase(selector);
-  const [isHydrated, setIsHydrated] = useState(false);
-
-  useEffect(() => {
-    setIsHydrated(true);
-  }, []);
+    const [store, setStore] = useState<T | undefined>(undefined);
   
-  const initialState = useStoreBase.getState();
-
-  // Return server-side state until client is hydrated
-  if (!isHydrated) {
-    // For functions, we can't return an initial state, so we return a no-op function
-    if (typeof selector(initialState) === 'function') {
-      return (() => {}) as T;
-    }
-    return selector(initialState);
-  }
-
-  return store;
-};
+    useEffect(() => {
+      // This ensures that we're only accessing the store on the client-side
+      // after hydration is complete.
+      const unsub = useStoreBase.subscribe(
+        (state) => setStore(selector(state)),
+        true // Fire immediately to get the initial state
+      );
+      return unsub;
+    }, [selector]);
+  
+    // On the server, and on the client before hydration, return undefined.
+    // The components using this hook should handle this undefined state gracefully.
+    return store;
+  };
 
 export default useStore;
