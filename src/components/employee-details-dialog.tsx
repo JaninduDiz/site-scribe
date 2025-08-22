@@ -43,7 +43,7 @@ export function EmployeeDetailsDialog({
   if (!attendance) {
     return (
        <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-md mx-4">
+        <DialogContent className="max-w-sm mx-4">
           <DialogHeader>
             <DialogTitle>Loading...</DialogTitle>
           </DialogHeader>
@@ -114,7 +114,7 @@ export function EmployeeDetailsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md mx-4">
+      <DialogContent className="max-w-sm mx-4">
         <DialogHeader>
           <DialogTitle>{employee.name}</DialogTitle>
           <DialogDescription>Attendance Overview</DialogDescription>

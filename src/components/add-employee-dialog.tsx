@@ -109,14 +109,14 @@ export function AddEmployeeDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-md mx-4 grid-rows-[auto,1fr,auto]">
+      <DialogContent className="max-w-sm mx-4 grid-rows-[auto,1fr,auto] max-h-[90vh]">
         <DialogHeader>
           <DialogTitle>{employee ? 'Edit Employee' : 'Add New Employee'}</DialogTitle>
           <DialogDescription>
             {employee ? 'Update the details for this employee.' : 'Enter the details for the new employee.'}
           </DialogDescription>
         </DialogHeader>
-        <ScrollArea className="max-h-[70vh] overflow-y-auto">
+        <ScrollArea className="overflow-y-auto">
             <form onSubmit={handleSubmit(onSubmit)} id="employee-form" className="px-1 py-4">
                 <div className="grid gap-4">
                     <div className="grid gap-2">
