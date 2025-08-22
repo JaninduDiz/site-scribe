@@ -106,8 +106,8 @@ export function AttendanceTracker() {
 
   return (
     <>
-    <Card>
-      <CardHeader>
+    <Card className="border-0 shadow-none">
+      <CardHeader className="px-0">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <CardTitle>Employee Attendance</CardTitle>
@@ -147,13 +147,13 @@ export function AttendanceTracker() {
           />
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-0">
         <div className="grid gap-2">
           {filteredEmployees.length > 0 ? (
             filteredEmployees.map(employee => {
                 const currentStatus = todaysAttendance[employee.id];
                 return (
-                  <div key={employee.id} className="rounded-lg bg-secondary/40">
+                  <div key={employee.id} className="rounded-lg border bg-secondary/40 shadow-sm">
                     <div className="p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                       <button
                         onClick={() => setSelectedEmployee(employee)}
