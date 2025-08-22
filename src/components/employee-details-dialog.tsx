@@ -43,7 +43,7 @@ export function EmployeeDetailsDialog({
   if (!attendance) {
     return (
        <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-sm mx-4">
+        <DialogContent className="sm:max-w-md mx-4">
           <DialogHeader>
             <DialogTitle>Loading...</DialogTitle>
           </DialogHeader>
@@ -100,7 +100,7 @@ export function EmployeeDetailsDialog({
   const modifiersClassNames = {
     present: 'bg-primary text-primary-foreground rounded-full',
     absent: 'bg-destructive text-destructive-foreground rounded-full',
-    'half-day': 'bg-secondary text-secondary-foreground rounded-full',
+    'half-day': 'bg-accent text-accent-foreground rounded-full',
   };
 
   const goToPreviousMonth = () => {
@@ -114,7 +114,7 @@ export function EmployeeDetailsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm mx-4">
+      <DialogContent className="sm:max-w-md mx-4">
         <DialogHeader>
           <DialogTitle>{employee.name}</DialogTitle>
           <DialogDescription>Attendance Overview</DialogDescription>

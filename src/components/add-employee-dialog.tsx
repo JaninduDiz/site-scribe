@@ -109,7 +109,7 @@ export function AddEmployeeDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="max-w-sm mx-4 grid-rows-[auto,1fr,auto] max-h-[90vh]">
+      <DialogContent className="sm:max-w-md mx-4 grid-rows-[auto,1fr,auto] max-h-[90vh]">
         <DialogHeader>
           <DialogTitle>{employee ? 'Edit Employee' : 'Add New Employee'}</DialogTitle>
           <DialogDescription>
