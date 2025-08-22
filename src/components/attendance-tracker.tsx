@@ -1,3 +1,4 @@
+
 // src/components/attendance-tracker.tsx
 'use client';
 
@@ -147,20 +148,20 @@ export function AttendanceTracker() {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-2">
           {filteredEmployees.length > 0 ? (
             filteredEmployees.map(employee => {
                 const currentStatus = todaysAttendance[employee.id];
                 return (
-                  <Card key={employee.id}>
-                    <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div key={employee.id} className="rounded-lg bg-secondary/40">
+                    <div className="p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                       <button
                         onClick={() => setSelectedEmployee(employee)}
                         className="text-left"
                       >
-                        <CardTitle className="text-base font-medium hover:underline">
+                        <p className="font-semibold hover:underline">
                           {employee.name}
-                        </CardTitle>
+                        </p>
                       </button>
                     <RadioGroup
                         value={currentStatus}
@@ -205,12 +206,12 @@ export function AttendanceTracker() {
                         <RadioGroupItem value="absent" id={`${employee.id}-absent`} className="sr-only" />
 
                     </RadioGroup>
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </div>
                 )
             })
           ) : (
-            <p className="text-muted-foreground col-span-full text-center">
+            <p className="text-muted-foreground col-span-full text-center py-4">
               No employees found. Add one in the Employees tab.
             </p>
           )}
