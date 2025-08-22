@@ -26,6 +26,7 @@ import {
   X,
   User,
   Loader2,
+  Clock,
 } from 'lucide-react';
 import { format, isSunday } from 'date-fns';
 import type { Employee, AttendanceData, AttendanceStatus } from '@/types';
@@ -166,6 +167,23 @@ export function AttendanceTracker() {
                       }
                     >
                       <Check className="mr-2 h-4 w-4" /> Present
+                    </Button>
+                     <Button
+                      variant={
+                        todaysAttendance[employee.id] === 'half-day'
+                          ? 'secondary'
+                          : 'outline'
+                      }
+                      className="w-full"
+                      onClick={() =>
+                        toggleAttendance(
+                          employee.id,
+                          formattedDate,
+                          'half-day'
+                        )
+                      }
+                    >
+                      <Clock className="mr-2 h-4 w-4" /> Half Day
                     </Button>
                     <Button
                       variant={

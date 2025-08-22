@@ -3,7 +3,7 @@ import type { Database } from "./supabase";
 
 export type Employee = Database['public']['Tables']['employees']['Row'];
 
-export type AttendanceStatus = 'present' | 'absent';
+export type AttendanceStatus = 'present' | 'absent' | 'half-day';
 
 export type AttendanceRecord = {
   [employeeId: string]: AttendanceStatus;
