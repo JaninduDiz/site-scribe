@@ -1,8 +1,7 @@
-
 // src/components/attendance-tracker.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useStore } from '@/lib/store';
 import {
@@ -23,22 +22,18 @@ import { Calendar } from '@/components/ui/calendar';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import {
-  Search,
   Calendar as CalendarIcon,
-  Check,
-  X,
-  User,
   Loader2,
-  Clock,
+  Wallet,
 } from 'lucide-react';
 import { format, isSunday } from 'date-fns';
 import type { Employee, AttendanceData, AttendanceStatus } from '@/types';
 import { EmployeeDetailsDialog } from './employee-details-dialog';
 import { cn } from '@/lib/utils';
+import { useDebouncedCallback } from 'use-debounce';
 
 export function AttendanceTracker() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
-  const [searchTerm, setSearchTerm] = useState('');
   
   const { employees, attendance, initialized } = useStore();
   
@@ -47,10 +42,14 @@ export function AttendanceTracker() {
   useEffect(() => {
     setSelectedDate(new Date());
   }, []);
+  
+  const formattedDate = useMemo(() => selectedDate ? format(selectedDate, 'yyyy-MM-dd') : '', [selectedDate]);
+  const todaysAttendance = useMemo(() => attendance[formattedDate] || {}, [attendance, formattedDate]);
 
-  const setAttendance = async (employeeId: string, date: string, status: AttendanceStatus) => {
+  const setAttendance = async (employeeId: string, date: string, status: AttendanceStatus, defaultAllowance: number) => {
     try {
-        const currentStatus = attendance[date]?.[employeeId];
+        const currentRecord = todaysAttendance[employeeId];
+        const currentStatus = currentRecord?.status;
 
         // If the user clicks the same status, we should clear it.
         if (currentStatus === status) {
@@ -66,18 +65,30 @@ export function AttendanceTracker() {
             date: date,
             employee_id: employeeId,
             status: status,
+            allowance: defaultAllowance
         }, { onConflict: 'date,employee_id' });
         if (error) throw error;
     } catch (error) {
       console.error("Error setting attendance:", error);
     }
   };
+  
+  const updateAllowance = useDebouncedCallback(async (employeeId: string, date: string, allowance: number) => {
+    try {
+        const { error } = await supabase.from('attendance')
+            .update({ allowance })
+            .match({ date: date, employee_id: employeeId });
+        if (error) throw error;
+    } catch (error) {
+        console.error("Error updating allowance:", error);
+    }
+  }, 500);
 
 
   if (!initialized || !selectedDate) {
     return (
-       <Card>
-        <CardHeader>
+       <Card className="border-0 shadow-none">
+        <CardHeader className="px-0">
            <CardTitle>Loading Attendance...</CardTitle>
         </CardHeader>
         <CardContent className="flex justify-center items-center p-8">
@@ -86,14 +97,16 @@ export function AttendanceTracker() {
       </Card>
     );
   }
+
+  const totalDailyAllowance = employees.reduce((total, employee) => {
+    const record = todaysAttendance[employee.id];
+    if (record && (record.status === 'present' || record.status === 'half-day')) {
+      const allowance = record.allowance || 0;
+      return total + (record.status === 'half-day' ? allowance / 2 : allowance);
+    }
+    return total;
+  }, 0);
   
-  const filteredEmployees = employees.filter(emp =>
-    emp.name?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const formattedDate = format(selectedDate, 'yyyy-MM-dd');
-  const todaysAttendance = attendance[formattedDate] || {};
-
   const getStatusColor = (status: AttendanceStatus | undefined, option: AttendanceStatus) => {
     if (status !== option) return 'bg-muted/60';
     switch (status) {
@@ -107,7 +120,7 @@ export function AttendanceTracker() {
   return (
     <>
     <Card className="border-0 shadow-none">
-      <CardHeader className="px-0">
+      <CardHeader className="p-4 md:p-0">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <CardTitle>Employee Attendance</CardTitle>
@@ -136,36 +149,65 @@ export function AttendanceTracker() {
             </PopoverContent>
           </Popover>
         </div>
-        <div className="mt-4 relative flex-1">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Search employees..."
-            className="pl-8"
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-          />
-        </div>
+        <Card className="mt-4">
+            <CardContent className="p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <Wallet className="h-6 w-6 text-primary" />
+                    <p className="font-semibold">Total Daily Allowance</p>
+                </div>
+                <p className="font-bold text-xl">LKR {totalDailyAllowance.toLocaleString()}</p>
+            </CardContent>
+        </Card>
       </CardHeader>
       <CardContent className="p-0">
         <div className="grid gap-2">
-          {filteredEmployees.length > 0 ? (
-            filteredEmployees.map(employee => {
-                const currentStatus = todaysAttendance[employee.id];
+          {employees.length > 0 ? (
+            employees.map(employee => {
+                const currentRecord = todaysAttendance[employee.id];
+                const currentStatus = currentRecord?.status;
+                const isEnabled = currentStatus === 'present' || currentStatus === 'half-day';
                 return (
                   <div key={employee.id} className="rounded-lg border bg-secondary/40 shadow-sm">
-                    <div className="p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                      <button
-                        onClick={() => setSelectedEmployee(employee)}
-                        className="text-left"
-                      >
-                        <p className="font-semibold hover:underline">
-                          {employee.name}
-                        </p>
-                      </button>
+                    <div className="p-3 flex flex-col gap-4">
+                      <div className="flex items-center justify-between">
+                        <button
+                          onClick={() => setSelectedEmployee(employee)}
+                          className="text-left"
+                        >
+                          <p className="font-semibold hover:underline">
+                            {employee.name}
+                          </p>
+                        </button>
+                        <Input
+                          type="number"
+                          className="w-28 h-9 text-right"
+                          placeholder="LKR"
+                          disabled={!isEnabled}
+                          value={currentRecord?.allowance ?? ''}
+                          onChange={(e) => {
+                            const newAllowance = parseInt(e.target.value, 10);
+                            // Optimistically update the UI
+                            useStore.setState(state => ({
+                                attendance: {
+                                    ...state.attendance,
+                                    [formattedDate]: {
+                                        ...state.attendance[formattedDate],
+                                        [employee.id]: {
+                                            ...state.attendance[formattedDate][employee.id],
+                                            allowance: isNaN(newAllowance) ? null : newAllowance,
+                                        }
+                                    }
+                                }
+                            }));
+                            if (!isNaN(newAllowance)) {
+                                updateAllowance(employee.id, formattedDate, newAllowance);
+                            }
+                          }}
+                        />
+                      </div>
                     <RadioGroup
                         value={currentStatus}
-                        onValueChange={(status) => setAttendance(employee.id, formattedDate, status as AttendanceStatus)}
+                        onValueChange={(status) => setAttendance(employee.id, formattedDate, status as AttendanceStatus, employee.daily_allowance || 1000)}
                         className="flex rounded-lg border border-input"
                     >
                         <Label

@@ -9,21 +9,19 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Calendar } from '@/components/ui/calendar';
-import type { Employee, AttendanceData, AttendanceStatus } from '@/types';
+import type { Employee, AttendanceData } from '@/types';
 import {
   startOfMonth,
   endOfMonth,
-  startOfWeek,
-  endOfWeek,
   eachDayOfInterval,
   format,
   isSameMonth,
-  isWithinInterval,
 } from 'date-fns';
 import { useState } from 'react';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ScrollArea } from './ui/scroll-area';
 
 type EmployeeDetailsDialogProps = {
   employee: Employee;
@@ -57,17 +55,10 @@ export function EmployeeDetailsDialog({
     end: endOfMonth(currentMonth),
   });
 
-  const daysInWeek = eachDayOfInterval({
-    start: startOfWeek(new Date(), { weekStartsOn: 1 }), // Assuming week starts on Monday
-    end: endOfWeek(new Date(), { weekStartsOn: 1 }),
-  });
-
   let monthlyPresent = 0;
   let monthlyAbsent = 0;
   let monthlyHalfDay = 0;
-  let weeklyPresent = 0;
-  let weeklyAbsent = 0;
-  let weeklyHalfDay = 0;
+  let totalAllowance = 0;
 
   const modifiers: Record<string, Date[]> = {
     present: [],
@@ -76,23 +67,21 @@ export function EmployeeDetailsDialog({
   };
 
   for (const dateStr in attendance) {
-    const status = attendance[dateStr][employee.id];
-    if (status) {
+    const record = attendance[dateStr][employee.id];
+    if (record) {
       const date = new Date(dateStr + 'T12:00:00'); // To avoid timezone issues
       
       // Monthly calculation
       if (isSameMonth(date, currentMonth)) {
-        if(status === 'present') monthlyPresent++;
-        if(status === 'absent') monthlyAbsent++;
-        if(status === 'half-day') monthlyHalfDay++;
-        modifiers[status]?.push(date);
-      }
-      
-      // Weekly calculation
-      if (isWithinInterval(date, { start: daysInWeek[0], end: daysInWeek[6] })) {
-        if (status === 'present') weeklyPresent++;
-        if (status === 'absent') weeklyAbsent++;
-        if (status === 'half-day') weeklyHalfDay++;
+        if(record.status === 'present') monthlyPresent++;
+        if(record.status === 'absent') monthlyAbsent++;
+        if(record.status === 'half-day') monthlyHalfDay++;
+        modifiers[record.status]?.push(date);
+
+        if(record.status === 'present' || record.status === 'half-day') {
+          const allowance = record.allowance || 0;
+          totalAllowance += record.status === 'half-day' ? allowance / 2 : allowance;
+        }
       }
     }
   }
@@ -114,12 +103,13 @@ export function EmployeeDetailsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md mx-4">
+      <DialogContent className="sm:max-w-md mx-4 max-h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>{employee.name}</DialogTitle>
-          <DialogDescription>Attendance Overview</DialogDescription>
+          <DialogDescription>Attendance Overview for {format(currentMonth, 'MMMM yyyy')}</DialogDescription>
         </DialogHeader>
-        <div className="flex justify-between items-center px-4">
+        <ScrollArea className="-mx-6 px-6">
+        <div className="flex justify-between items-center py-4">
             <Button variant="outline" size="icon" onClick={goToPreviousMonth}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
@@ -136,20 +126,19 @@ export function EmployeeDetailsDialog({
           modifiersClassNames={modifiersClassNames}
           className="rounded-md border"
         />
-        <div className="space-y-2 text-sm">
-            <div className="font-semibold">This Week's Summary:</div>
+        <div className="space-y-4 text-sm py-4">
+            <div className="font-semibold">Monthly Summary:</div>
             <div className="flex gap-2 flex-wrap">
-                <Badge variant="default">Present: {weeklyPresent}</Badge>
-                <Badge variant="secondary">Half Day: {weeklyHalfDay}</Badge>
-                <Badge variant="destructive">Absent: {weeklyAbsent}</Badge>
-            </div>
-            <div className="font-semibold pt-2">Monthly Summary ({format(currentMonth, 'MMMM')}):</div>
-             <div className="flex gap-2 flex-wrap">
                 <Badge variant="default">Present: {monthlyPresent}</Badge>
                 <Badge variant="secondary">Half Day: {monthlyHalfDay}</Badge>
                 <Badge variant="destructive">Absent: {monthlyAbsent}</Badge>
             </div>
+             <div className="font-semibold pt-2">Total Allowance:</div>
+             <div className="flex gap-2 flex-wrap">
+                <Badge className="bg-green-600 hover:bg-green-700 text-white">LKR {totalAllowance.toLocaleString()}</Badge>
+            </div>
         </div>
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );

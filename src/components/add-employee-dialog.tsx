@@ -35,6 +35,9 @@ const employeeSchema = z.object({
     .max(99, { message: "Age must be a 2-digit number." })
     .optional(),
   address: z.string().optional(),
+  daily_allowance: z.coerce.number()
+    .min(0, { message: "Daily allowance must be a positive number." })
+    .optional(),
 });
 
 
@@ -62,6 +65,7 @@ export function AddEmployeeDialog({
         phone: '',
         age: undefined,
         address: '',
+        daily_allowance: 1000,
     }
   });
 
@@ -73,9 +77,10 @@ export function AddEmployeeDialog({
               phone: employee.phone || '',
               age: employee.age || undefined,
               address: employee.address || '',
+              daily_allowance: employee.daily_allowance || 1000,
             });
         } else {
-            reset({ name: '', phone: '', age: undefined, address: '' });
+            reset({ name: '', phone: '', age: undefined, address: '', daily_allowance: 1000 });
         }
     }
   }, [isOpen, employee, reset]);
@@ -90,6 +95,7 @@ export function AddEmployeeDialog({
           phone: data.phone || null,
           age: data.age || null,
           address: data.address || null,
+          daily_allowance: data.daily_allowance || 1000,
       };
 
       const { error } = await supabase.from('employees').upsert(employeeData);
@@ -109,15 +115,15 @@ export function AddEmployeeDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="max-h-[85vh] flex flex-col">
+      <DialogContent className="sm:max-w-md mx-4 max-h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>{employee ? 'Edit Employee' : 'Add New Employee'}</DialogTitle>
           <DialogDescription>
             {employee ? 'Update the details for this employee.' : 'Enter the details for the new employee.'}
           </DialogDescription>
         </DialogHeader>
-        <ScrollArea className="overflow-y-auto">
-            <form onSubmit={handleSubmit(onSubmit)} id="employee-form" className="px-1 py-4">
+        <ScrollArea className="overflow-y-auto -mx-6 px-6">
+            <form onSubmit={handleSubmit(onSubmit)} id="employee-form" className="py-4">
                 <div className="grid gap-4">
                     <div className="grid gap-2">
                         <Label htmlFor="name">Name</Label>
@@ -140,6 +146,17 @@ export function AddEmployeeDialog({
                             )}
                         />
                         {errors.phone && <p className="text-sm text-destructive">{errors.phone.message}</p>}
+                    </div>
+                     <div className="grid gap-2">
+                        <Label htmlFor="daily_allowance">Default Daily Allowance (LKR)</Label>
+                        <Controller
+                            name="daily_allowance"
+                            control={control}
+                            render={({ field }) => (
+                            <Input id="daily_allowance" type="number" {...field} onChange={e => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))} value={field.value ?? ''} />
+                            )}
+                        />
+                        {errors.daily_allowance && <p className="text-sm text-destructive">{errors.daily_allowance.message}</p>}
                     </div>
                     <div className="grid gap-2">
                         <Label htmlFor="age">Age</Label>
@@ -166,7 +183,7 @@ export function AddEmployeeDialog({
                 </div>
             </form>
         </ScrollArea>
-        <DialogFooter className="mt-auto">
+        <DialogFooter className="mt-auto pt-4 border-t">
             <Button type="submit" form="employee-form" disabled={isSubmitting}>
                 {isSubmitting ? (
                     <>

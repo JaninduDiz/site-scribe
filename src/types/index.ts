@@ -6,7 +6,10 @@ export type Employee = Database['public']['Tables']['employees']['Row'];
 export type AttendanceStatus = 'present' | 'absent' | 'half-day';
 
 export type AttendanceRecord = {
-  [employeeId: string]: AttendanceStatus;
+  [employeeId: string]: {
+    status: AttendanceStatus;
+    allowance: number | null;
+  };
 };
 
 export type AttendanceData = {
