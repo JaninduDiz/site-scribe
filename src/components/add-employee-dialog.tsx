@@ -109,7 +109,7 @@ export function AddEmployeeDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-md mx-4 grid-rows-[auto,1fr,auto] max-h-[90vh]">
+      <DialogContent className="max-h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>{employee ? 'Edit Employee' : 'Add New Employee'}</DialogTitle>
           <DialogDescription>
@@ -166,7 +166,7 @@ export function AddEmployeeDialog({
                 </div>
             </form>
         </ScrollArea>
-        <DialogFooter>
+        <DialogFooter className="mt-auto">
             <Button type="submit" form="employee-form" disabled={isSubmitting}>
                 {isSubmitting ? (
                     <>
