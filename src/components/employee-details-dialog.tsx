@@ -80,7 +80,7 @@ export function EmployeeDetailsDialog({
 
         if(record.status === 'present' || record.status === 'half-day') {
           const allowance = record.allowance || 0;
-          totalAllowance += record.status === 'half-day' ? allowance / 2 : allowance;
+          totalAllowance += allowance;
         }
       }
     }

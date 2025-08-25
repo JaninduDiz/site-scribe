@@ -83,7 +83,7 @@ export function exportToExcel(
             const record = attendance[dateStr]?.[employee.id];
             if (record && (record.status === 'present' || record.status === 'half-day')) {
                 const allowance = record.allowance || 0;
-                return total + (record.status === 'half-day' ? allowance / 2 : allowance);
+                return total + allowance;
             }
         }
         return total;

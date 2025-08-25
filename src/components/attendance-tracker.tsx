@@ -102,7 +102,7 @@ export function AttendanceTracker() {
     const record = todaysAttendance[employee.id];
     if (record && (record.status === 'present' || record.status === 'half-day')) {
       const allowance = record.allowance || 0;
-      return total + (record.status === 'half-day' ? allowance / 2 : allowance);
+      return total + allowance;
     }
     return total;
   }, 0);
