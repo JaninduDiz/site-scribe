@@ -18,15 +18,15 @@ export default function Home() {
       <StoreInitializer />
       <Header />
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col flex-1">
-        <main className="flex-1 overflow-y-auto pb-20">
-            <TabsContent value="attendance" className="p-4 md:p-6">
+        <main className="flex-1 overflow-y-auto pb-24">
+            <TabsContent value="attendance" className="p-4 md:p-6 pt-4">
                 <AttendanceTracker />
             </TabsContent>
-            <TabsContent value="employees" className="p-4 md:p-6">
+            <TabsContent value="employees" className="p-4 md:p-6 pt-4">
                 <EmployeeList />
             </TabsContent>
         </main>
-        <TabsList className="grid w-full grid-cols-2 h-16 rounded-none fixed bottom-0 z-20" style={{ paddingBottom: 'env(safe-area-inset-bottom)'}}>
+        <TabsList className="grid w-full grid-cols-2 h-20 rounded-none fixed bottom-0 z-20" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 0.5rem)'}}>
             <TabsTrigger value="attendance" className="text-sm data-[state=active]:text-primary h-full rounded-none flex-col gap-1">
             <CalendarCheck className="h-5 w-5" />
             Attendance

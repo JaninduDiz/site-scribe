@@ -43,7 +43,7 @@ export function EmployeeDetailsDialog({
   if (!attendance) {
     return (
        <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md mx-4">
           <DialogHeader>
             <DialogTitle>Loading...</DialogTitle>
           </DialogHeader>
@@ -64,26 +64,35 @@ export function EmployeeDetailsDialog({
 
   let monthlyPresent = 0;
   let monthlyAbsent = 0;
+  let monthlyHalfDay = 0;
   let weeklyPresent = 0;
   let weeklyAbsent = 0;
+  let weeklyHalfDay = 0;
 
   const modifiers: Record<string, Date[]> = {
     present: [],
     absent: [],
+    'half-day': [],
   };
 
   for (const dateStr in attendance) {
     const status = attendance[dateStr][employee.id];
     if (status) {
       const date = new Date(dateStr + 'T12:00:00'); // To avoid timezone issues
+      
+      // Monthly calculation
       if (isSameMonth(date, currentMonth)) {
-        modifiers[status].push(date);
-        if (status === 'present') monthlyPresent++;
-        if (status === 'absent') monthlyAbsent++;
+        if(status === 'present') monthlyPresent++;
+        if(status === 'absent') monthlyAbsent++;
+        if(status === 'half-day') monthlyHalfDay++;
+        modifiers[status]?.push(date);
       }
+      
+      // Weekly calculation
       if (isWithinInterval(date, { start: daysInWeek[0], end: daysInWeek[6] })) {
         if (status === 'present') weeklyPresent++;
         if (status === 'absent') weeklyAbsent++;
+        if (status === 'half-day') weeklyHalfDay++;
       }
     }
   }
@@ -91,6 +100,7 @@ export function EmployeeDetailsDialog({
   const modifiersClassNames = {
     present: 'bg-primary text-primary-foreground rounded-full',
     absent: 'bg-destructive text-destructive-foreground rounded-full',
+    'half-day': 'bg-accent text-accent-foreground rounded-full',
   };
 
   const goToPreviousMonth = () => {
@@ -104,7 +114,7 @@ export function EmployeeDetailsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-md mx-4">
         <DialogHeader>
           <DialogTitle>{employee.name}</DialogTitle>
           <DialogDescription>Attendance Overview</DialogDescription>
@@ -128,13 +138,15 @@ export function EmployeeDetailsDialog({
         />
         <div className="space-y-2 text-sm">
             <div className="font-semibold">This Week's Summary:</div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
                 <Badge variant="default">Present: {weeklyPresent}</Badge>
+                <Badge variant="secondary">Half Day: {weeklyHalfDay}</Badge>
                 <Badge variant="destructive">Absent: {weeklyAbsent}</Badge>
             </div>
             <div className="font-semibold pt-2">Monthly Summary ({format(currentMonth, 'MMMM')}):</div>
-             <div className="flex gap-2">
+             <div className="flex gap-2 flex-wrap">
                 <Badge variant="default">Present: {monthlyPresent}</Badge>
+                <Badge variant="secondary">Half Day: {monthlyHalfDay}</Badge>
                 <Badge variant="destructive">Absent: {monthlyAbsent}</Badge>
             </div>
         </div>

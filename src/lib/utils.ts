@@ -32,7 +32,14 @@ export function exportToExcel(
 
     employees.forEach(employee => {
       const status = attendance[dateStr]?.[employee.id];
-      const capitalizedStatus = status ? status.charAt(0).toUpperCase() + status.slice(1) : '-';
+      let capitalizedStatus = '-';
+      if (status) {
+        if (status === 'half-day') {
+            capitalizedStatus = 'Half Day';
+        } else {
+            capitalizedStatus = status.charAt(0).toUpperCase() + status.slice(1);
+        }
+      }
       row.push(capitalizedStatus);
     });
     return row;
@@ -49,7 +56,9 @@ export function exportToExcel(
         const dateStr = format(day, 'yyyy-MM-dd');
         const status = attendance[dateStr]?.[employee.id];
         if (status === 'present') {
-          presentCount++;
+          presentCount += 1;
+        } else if (status === 'half-day') {
+          presentCount += 0.5;
         } else if (status === 'absent') {
           absentCount++;
         }

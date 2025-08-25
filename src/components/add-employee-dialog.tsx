@@ -20,6 +20,7 @@ import { supabase } from '@/lib/supabase';
 import type { Employee } from '@/types';
 import { Loader2 } from 'lucide-react';
 import { Textarea } from './ui/textarea';
+import { ScrollArea } from './ui/scroll-area';
 
 const employeeSchema = z.object({
   name: z.string()
@@ -108,62 +109,65 @@ export function AddEmployeeDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-[425px] mx-4">
+      <DialogContent className="max-h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>{employee ? 'Edit Employee' : 'Add New Employee'}</DialogTitle>
           <DialogDescription>
             {employee ? 'Update the details for this employee.' : 'Enter the details for the new employee.'}
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit(onSubmit)}>
-            <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="name" className="text-right">Name</Label>
-                    <Controller
-                        name="name"
-                        control={control}
-                        render={({ field }) => (
-                            <Input id="name" {...field} className="col-span-3" />
-                        )}
-                    />
-                    {errors.name && <p className="col-span-4 text-sm text-destructive text-right">{errors.name.message}</p>}
+        <ScrollArea className="overflow-y-auto">
+            <form onSubmit={handleSubmit(onSubmit)} id="employee-form" className="px-1 py-4">
+                <div className="grid gap-4">
+                    <div className="grid gap-2">
+                        <Label htmlFor="name">Name</Label>
+                        <Controller
+                            name="name"
+                            control={control}
+                            render={({ field }) => (
+                                <Input id="name" {...field} />
+                            )}
+                        />
+                        {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
+                    </div>
+                    <div className="grid gap-2">
+                        <Label htmlFor="phone">Phone</Label>
+                        <Controller
+                            name="phone"
+                            control={control}
+                            render={({ field }) => (
+                                <Input id="phone" type="tel" {...field} />
+                            )}
+                        />
+                        {errors.phone && <p className="text-sm text-destructive">{errors.phone.message}</p>}
+                    </div>
+                    <div className="grid gap-2">
+                        <Label htmlFor="age">Age</Label>
+                        <Controller
+                            name="age"
+                            control={control}
+                            render={({ field }) => (
+                            <Input id="age" type="number" {...field} onChange={e => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))} value={field.value ?? ''} />
+                            )}
+                        />
+                        {errors.age && <p className="text-sm text-destructive">{errors.age.message}</p>}
+                    </div>
+                    <div className="grid gap-2">
+                        <Label htmlFor="address">Address</Label>
+                        <Controller
+                            name="address"
+                            control={control}
+                            render={({ field }) => (
+                            <Textarea id="address" {...field} />
+                            )}
+                        />
+                        {errors.address && <p className="text-sm text-destructive">{errors.address.message}</p>}
+                    </div>
                 </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="phone" className="text-right">Phone</Label>
-                    <Controller
-                        name="phone"
-                        control={control}
-                        render={({ field }) => (
-                            <Input id="phone" {...field} className="col-span-3" />
-                        )}
-                    />
-                    {errors.phone && <p className="col-span-4 text-sm text-destructive text-right">{errors.phone.message}</p>}
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="age" className="text-right">Age</Label>
-                     <Controller
-                        name="age"
-                        control={control}
-                        render={({ field }) => (
-                           <Input id="age" type="number" {...field} onChange={e => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))} value={field.value ?? ''} className="col-span-3" />
-                        )}
-                    />
-                    {errors.age && <p className="col-span-4 text-sm text-destructive text-right">{errors.age.message}</p>}
-                </div>
-                <div className="grid grid-cols-4 items-start gap-4">
-                    <Label htmlFor="address" className="text-right pt-2">Address</Label>
-                    <Controller
-                        name="address"
-                        control={control}
-                        render={({ field }) => (
-                           <Textarea id="address" {...field} className="col-span-3" />
-                        )}
-                    />
-                    {errors.address && <p className="col-span-4 text-sm text-destructive text-right">{errors.address.message}</p>}
-                </div>
-            </div>
-            <DialogFooter>
-            <Button type="submit" disabled={isSubmitting}>
+            </form>
+        </ScrollArea>
+        <DialogFooter className="mt-auto">
+            <Button type="submit" form="employee-form" disabled={isSubmitting}>
                 {isSubmitting ? (
                     <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -173,8 +177,7 @@ export function AddEmployeeDialog({
                     'Save Employee'
                 )}
             </Button>
-            </DialogFooter>
-        </form>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

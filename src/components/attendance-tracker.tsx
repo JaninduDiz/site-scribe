@@ -1,3 +1,4 @@
+
 // src/components/attendance-tracker.tsx
 'use client';
 
@@ -19,6 +20,8 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
 import {
   Search,
   Calendar as CalendarIcon,
@@ -26,10 +29,12 @@ import {
   X,
   User,
   Loader2,
+  Clock,
 } from 'lucide-react';
 import { format, isSunday } from 'date-fns';
 import type { Employee, AttendanceData, AttendanceStatus } from '@/types';
 import { EmployeeDetailsDialog } from './employee-details-dialog';
+import { cn } from '@/lib/utils';
 
 export function AttendanceTracker() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
@@ -43,28 +48,28 @@ export function AttendanceTracker() {
     setSelectedDate(new Date());
   }, []);
 
-  const toggleAttendance = async (employeeId: string, date: string, status: AttendanceStatus) => {
+  const setAttendance = async (employeeId: string, date: string, status: AttendanceStatus) => {
     try {
         const currentStatus = attendance[date]?.[employeeId];
-        const newStatus = currentStatus === status ? null : status;
 
-        if (newStatus === null) {
-            // Delete the record
+        // If the user clicks the same status, we should clear it.
+        if (currentStatus === status) {
             const { error } = await supabase.from('attendance')
                 .delete()
                 .match({ date: date, employee_id: employeeId });
             if (error) throw error;
-        } else {
-            // Upsert the record
-            const { error } = await supabase.from('attendance').upsert({
-                date: date,
-                employee_id: employeeId,
-                status: newStatus,
-            }, { onConflict: 'date,employee_id' });
-            if (error) throw error;
+            return;
         }
+        
+        // Upsert the new status
+        const { error } = await supabase.from('attendance').upsert({
+            date: date,
+            employee_id: employeeId,
+            status: status,
+        }, { onConflict: 'date,employee_id' });
+        if (error) throw error;
     } catch (error) {
-      console.error("Error toggling attendance:", error);
+      console.error("Error setting attendance:", error);
     }
   };
 
@@ -89,10 +94,20 @@ export function AttendanceTracker() {
   const formattedDate = format(selectedDate, 'yyyy-MM-dd');
   const todaysAttendance = attendance[formattedDate] || {};
 
+  const getStatusColor = (status: AttendanceStatus | undefined, option: AttendanceStatus) => {
+    if (status !== option) return 'bg-muted/60';
+    switch (status) {
+        case 'present': return 'bg-primary text-primary-foreground';
+        case 'half-day': return 'bg-accent text-accent-foreground';
+        case 'absent': return 'bg-destructive text-destructive-foreground';
+        default: return 'bg-muted/60';
+    }
+  }
+
   return (
     <>
-    <Card>
-      <CardHeader>
+    <Card className="border-0 shadow-none">
+      <CardHeader className="px-0">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <CardTitle>Employee Attendance</CardTitle>
@@ -132,60 +147,71 @@ export function AttendanceTracker() {
           />
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <CardContent className="p-0">
+        <div className="grid gap-2">
           {filteredEmployees.length > 0 ? (
-            filteredEmployees.map(employee => (
-              <Card key={employee.id} className="flex flex-col">
-                <CardHeader className="flex-row items-center justify-between pb-2">
-                   <button
-                    onClick={() => setSelectedEmployee(employee)}
-                    className="text-left"
-                  >
-                    <CardTitle className="text-base font-medium hover:underline">
-                      {employee.name}
-                    </CardTitle>
-                  </button>
-                  <User className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent className="flex-1 flex items-end">
-                  <div className="flex w-full gap-2">
-                    <Button
-                      variant={
-                        todaysAttendance[employee.id] === 'present'
-                          ? 'default'
-                          : 'outline'
-                      }
-                      className="w-full"
-                      onClick={() =>
-                        toggleAttendance(
-                          employee.id,
-                          formattedDate,
-                          'present'
-                        )
-                      }
+            filteredEmployees.map(employee => {
+                const currentStatus = todaysAttendance[employee.id];
+                return (
+                  <div key={employee.id} className="rounded-lg border bg-secondary/40 shadow-sm">
+                    <div className="p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                      <button
+                        onClick={() => setSelectedEmployee(employee)}
+                        className="text-left"
+                      >
+                        <p className="font-semibold hover:underline">
+                          {employee.name}
+                        </p>
+                      </button>
+                    <RadioGroup
+                        value={currentStatus}
+                        onValueChange={(status) => setAttendance(employee.id, formattedDate, status as AttendanceStatus)}
+                        className="flex rounded-lg border border-input"
                     >
-                      <Check className="mr-2 h-4 w-4" /> Present
-                    </Button>
-                    <Button
-                      variant={
-                        todaysAttendance[employee.id] === 'absent'
-                          ? 'destructive'
-                          : 'outline'
-                      }
-                      className="w-full"
-                      onClick={() =>
-                        toggleAttendance(employee.id, formattedDate, 'absent')
-                      }
-                    >
-                      <X className="mr-2 h-4 w-4" /> Absent
-                    </Button>
+                        <Label
+                            htmlFor={`${employee.id}-present`}
+                            className={cn(
+                                "flex-1 text-center text-sm p-2.5 rounded-l-md cursor-pointer transition-colors",
+                                getStatusColor(currentStatus, 'present')
+                            )}
+                        >
+                            Present
+                        </Label>
+                        <RadioGroupItem value="present" id={`${employee.id}-present`} className="sr-only" />
+                        
+                        <div className="border-l border-input h-auto"></div>
+
+                        <Label
+                            htmlFor={`${employee.id}-half-day`}
+                            className={cn(
+                                "flex-1 text-center text-sm p-2.5 cursor-pointer transition-colors",
+                                getStatusColor(currentStatus, 'half-day')
+                            )}
+                        >
+                            Half Day
+                        </Label>
+                        <RadioGroupItem value="half-day" id={`${employee.id}-half-day`} className="sr-only" />
+
+                        <div className="border-l border-input h-auto"></div>
+
+                        <Label
+                            htmlFor={`${employee.id}-absent`}
+                            className={cn(
+                                "flex-1 text-center text-sm p-2.5 rounded-r-md cursor-pointer transition-colors",
+                                getStatusColor(currentStatus, 'absent')
+                            )}
+                        >
+                            Absent
+                        </Label>
+                        <RadioGroupItem value="absent" id={`${employee.id}-absent`} className="sr-only" />
+
+                    </RadioGroup>
+                    </div>
                   </div>
-                </CardContent>
-              </Card>
-            ))
+                )
+            })
           ) : (
-            <p className="text-muted-foreground col-span-full text-center">
+            <p className="text-muted-foreground col-span-full text-center py-4">
               No employees found. Add one in the Employees tab.
             </p>
           )}
