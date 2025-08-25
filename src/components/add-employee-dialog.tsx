@@ -77,7 +77,7 @@ export function AddEmployeeDialog({
               phone: employee.phone || '',
               age: employee.age || undefined,
               address: employee.address || '',
-              daily_allowance: employee.daily_allowance || 1000,
+              daily_allowance: employee.daily_allowance === null ? 1000 : employee.daily_allowance,
             });
         } else {
             reset({ name: '', phone: '', age: undefined, address: '', daily_allowance: 1000 });

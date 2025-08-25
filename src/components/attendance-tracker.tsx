@@ -65,7 +65,7 @@ export function AttendanceTracker() {
             date: date,
             employee_id: employeeId,
             status: status,
-            allowance: defaultAllowance
+            allowance: currentRecord?.allowance ?? defaultAllowance
         }, { onConflict: 'date,employee_id' });
         if (error) throw error;
     } catch (error) {
@@ -183,7 +183,7 @@ export function AttendanceTracker() {
                           className="w-28 h-9 text-right"
                           placeholder="LKR"
                           disabled={!isEnabled}
-                          value={currentRecord?.allowance ?? ''}
+                          value={currentRecord?.allowance ?? employee.daily_allowance ?? ''}
                           onChange={(e) => {
                             const newAllowance = parseInt(e.target.value, 10);
                             // Optimistically update the UI
@@ -193,7 +193,7 @@ export function AttendanceTracker() {
                                     [formattedDate]: {
                                         ...state.attendance[formattedDate],
                                         [employee.id]: {
-                                            ...state.attendance[formattedDate][employee.id],
+                                            ...state.attendance[formattedDate]?.[employee.id],
                                             allowance: isNaN(newAllowance) ? null : newAllowance,
                                         }
                                     }
