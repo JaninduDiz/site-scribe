@@ -21,6 +21,7 @@ import type { Employee } from '@/types';
 import { Loader2 } from 'lucide-react';
 import { Textarea } from './ui/textarea';
 import { ScrollArea } from './ui/scroll-area';
+import { cn } from '@/lib/utils';
 
 const employeeSchema = z.object({
   name: z.string()
@@ -115,15 +116,15 @@ export function AddEmployeeDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-md max-h-[90vh] flex flex-col">
+      <DialogContent className={cn("sm:max-w-md", "h-full w-full max-h-[95vh] sm:h-auto sm:max-h-[90vh]")}>
         <DialogHeader>
           <DialogTitle>{employee ? 'Edit Employee' : 'Add New Employee'}</DialogTitle>
           <DialogDescription>
             {employee ? 'Update the details for this employee.' : 'Enter the details for the new employee.'}
           </DialogDescription>
         </DialogHeader>
-        <ScrollArea className="-mx-6 px-6">
-            <form onSubmit={handleSubmit(onSubmit)} id="employee-form" className="py-4 space-y-4">
+        <ScrollArea className="-mx-6 flex-1 px-6">
+            <form onSubmit={handleSubmit(onSubmit)} id="employee-form" className="px-2 py-4 space-y-4">
                 <div className="space-y-2">
                     <Label htmlFor="name">Name</Label>
                     <Controller
@@ -181,7 +182,7 @@ export function AddEmployeeDialog({
                 </div>
             </form>
         </ScrollArea>
-        <DialogFooter className="mt-auto pt-4 border-t">
+        <DialogFooter className="border-t">
             <Button type="submit" form="employee-form" disabled={isSubmitting}>
                 {isSubmitting ? (
                     <>
