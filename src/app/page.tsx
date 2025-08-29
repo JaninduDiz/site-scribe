@@ -27,11 +27,11 @@ export default function Home() {
             </TabsContent>
         </main>
         <TabsList className="grid w-full grid-cols-2 h-20 rounded-none fixed bottom-0 z-20" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 0.5rem)'}}>
-            <TabsTrigger value="attendance" className="text-sm data-[state=active]:text-primary h-full rounded-none flex-col gap-1">
+            <TabsTrigger value="attendance" className="text-xs data-[state=active]:text-primary h-full rounded-none flex-col gap-1">
             <CalendarCheck className="h-5 w-5" />
             Attendance
             </TabsTrigger>
-            <TabsTrigger value="employees" className="text-sm data-[state=active]:text-primary h-full rounded-none flex-col gap-1">
+            <TabsTrigger value="employees" className="text-xs data-[state=active]:text-primary h-full rounded-none flex-col gap-1">
             <Users className="h-5 w-5" />
             Employees
             </TabsTrigger>

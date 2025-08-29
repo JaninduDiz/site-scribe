@@ -119,8 +119,8 @@ export function AttendanceTracker() {
 
   return (
     <>
-    <Card className="border-0 shadow-none">
-      <CardHeader className="p-4 md:p-0">
+    <Card className="border-0 shadow-none p-0">
+      <CardHeader className="p-0">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <CardTitle>Employee Attendance</CardTitle>
@@ -153,13 +153,13 @@ export function AttendanceTracker() {
             <CardContent className="p-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                     <Wallet className="h-6 w-6 text-primary" />
-                    <p className="font-semibold">Total Daily Allowance</p>
+                    <p className="font-semibold text-sm">Total Daily Allowance</p>
                 </div>
-                <p className="font-bold text-xl">LKR {totalDailyAllowance.toLocaleString()}</p>
+                <p className="font-bold text-lg">LKR {totalDailyAllowance.toLocaleString()}</p>
             </CardContent>
         </Card>
       </CardHeader>
-      <CardContent className="p-0">
+      <CardContent className="p-0 mt-4">
         <div className="grid gap-2">
           {employees.length > 0 ? (
             employees.map(employee => {
@@ -174,13 +174,13 @@ export function AttendanceTracker() {
                           onClick={() => setSelectedEmployee(employee)}
                           className="text-left"
                         >
-                          <p className="font-semibold hover:underline">
+                          <p className="font-semibold hover:underline text-sm">
                             {employee.name}
                           </p>
                         </button>
                         <Input
                           type="number"
-                          className="w-28 h-9 text-right"
+                          className="w-28 h-9 text-right text-sm"
                           placeholder="LKR"
                           disabled={!isEnabled}
                           value={currentRecord?.allowance ?? employee.daily_allowance ?? ''}
@@ -213,7 +213,7 @@ export function AttendanceTracker() {
                         <Label
                             htmlFor={`${employee.id}-present`}
                             className={cn(
-                                "flex-1 text-center text-sm p-2.5 rounded-l-md cursor-pointer transition-colors",
+                                "flex-1 text-center text-xs p-2.5 rounded-l-md cursor-pointer transition-colors",
                                 getStatusColor(currentStatus, 'present')
                             )}
                         >
@@ -226,7 +226,7 @@ export function AttendanceTracker() {
                         <Label
                             htmlFor={`${employee.id}-half-day`}
                             className={cn(
-                                "flex-1 text-center text-sm p-2.5 cursor-pointer transition-colors",
+                                "flex-1 text-center text-xs p-2.5 cursor-pointer transition-colors",
                                 getStatusColor(currentStatus, 'half-day')
                             )}
                         >
@@ -239,7 +239,7 @@ export function AttendanceTracker() {
                         <Label
                             htmlFor={`${employee.id}-absent`}
                             className={cn(
-                                "flex-1 text-center text-sm p-2.5 rounded-r-md cursor-pointer transition-colors",
+                                "flex-1 text-center text-xs p-2.5 rounded-r-md cursor-pointer transition-colors",
                                 getStatusColor(currentStatus, 'absent')
                             )}
                         >

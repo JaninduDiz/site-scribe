@@ -108,9 +108,9 @@ export function EmployeeList() {
                     <div className="flex items-center gap-4">
                        <User className="h-6 w-6 text-muted-foreground" />
                        <div className="text-sm">
-                           <p className="font-semibold text-base">{employee.name}</p>
-                           <p className="text-muted-foreground">{employee.phone || 'No phone'}</p>
-                           <p className="text-muted-foreground">{employee.address || 'No address'}</p>
+                           <p className="font-semibold text-sm">{employee.name}</p>
+                           <p className="text-muted-foreground text-xs">{employee.phone || 'No phone'}</p>
+                           <p className="text-muted-foreground text-xs">{employee.address || 'No address'}</p>
                        </div>
                     </div>
                     <div className="flex items-center gap-2">
