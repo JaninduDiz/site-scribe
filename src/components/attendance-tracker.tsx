@@ -50,8 +50,19 @@ export function AttendanceTracker({ isEditMode }: AttendanceTrackerProps) {
   const formattedDate = useMemo(() => selectedDate ? format(selectedDate, 'yyyy-MM-dd') : '', [selectedDate]);
   
   const getRecordForEmployee = (employeeId: string) => {
-    return pendingChanges[formattedDate]?.[employeeId] || attendance[formattedDate]?.[employeeId];
+    const pendingKey = `${formattedDate}-${employeeId}`;
+    const pendingRecord = pendingChanges[pendingKey];
+    const savedRecord = attendance[formattedDate]?.[employeeId];
+    
+    if (pendingRecord) {
+        return {
+            status: pendingRecord.status !== null ? pendingRecord.status : savedRecord?.status,
+            allowance: pendingRecord.allowance !== null ? pendingRecord.allowance : savedRecord?.allowance,
+        };
+    }
+    return savedRecord;
   };
+
 
   const setLocalAttendance = (employeeId: string, status: AttendanceStatus, defaultAllowance: number) => {
     const currentRecord = getRecordForEmployee(employeeId);
