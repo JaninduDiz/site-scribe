@@ -2,7 +2,7 @@ import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isValid, isSunday } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isValid, isSunday, getDaysInMonth } from 'date-fns';
 import type { Employee, AttendanceData } from '@/types';
 
 export function cn(...inputs: ClassValue[]) {
@@ -15,95 +15,91 @@ export function exportToExcel(
   attendance: AttendanceData
 ) {
   const [year, month] = selectedMonth.split('-').map(Number);
-  const startDate = startOfMonth(new Date(year, month - 1));
-  const endDate = endOfMonth(new Date(year, month - 1));
+  const monthDate = new Date(year, month - 1);
+  const startDate = startOfMonth(monthDate);
+  const endDate = endOfMonth(monthDate);
   const daysInMonth = eachDayOfInterval({ start: startDate, end: endDate });
+  const numDays = getDaysInMonth(monthDate);
 
-  // Main attendance sheet
-  const headers = ['Date', ...employees.map(emp => emp.name)];
+  const monthYearHeader = format(monthDate, 'MMMM yyyy');
   
-  const dataRows = daysInMonth.map(day => {
-    if (isSunday(day)) {
-      return [format(day, 'dd-MMM-yyyy'), ...Array(employees.length).fill('Sunday')];
-    }
-    const dateStr = format(day, 'yyyy-MM-dd');
-    const formattedDay = format(day, 'dd-MMM-yyyy');
-    const row: (string | number)[] = [formattedDay];
+  // Create headers
+  const dayHeaders = Array.from({ length: numDays }, (_, i) => format(new Date(year, month - 1, i + 1), 'dd'));
+  const summaryHeaders = ['Total Present Days', 'Total Absent Days', 'Total Allowance (LKR)'];
+  const headers = ['Employee Name', ...dayHeaders, ...summaryHeaders];
+  
+  const dataRows = employees.map(employee => {
+    const row: (string | number)[] = [employee.name];
+    let totalPresent = 0;
+    let totalAbsent = 0;
+    let totalAllowance = 0;
 
-    employees.forEach(employee => {
-      const record = attendance[dateStr]?.[employee.id];
-      const status = record?.status;
-      let capitalizedStatus = '-';
-      if (status) {
-        if (status === 'half-day') {
-            capitalizedStatus = 'Half Day';
-        } else {
-            capitalizedStatus = status.charAt(0).toUpperCase() + status.slice(1);
+    daysInMonth.forEach(day => {
+        if (isSunday(day)) {
+            row.push('SUN');
+            return;
         }
-      }
-      row.push(capitalizedStatus);
+
+        const dateStr = format(day, 'yyyy-MM-dd');
+        const record = attendance[dateStr]?.[employee.id];
+        const status = record?.status;
+
+        switch (status) {
+            case 'present':
+                row.push('P');
+                totalPresent += 1;
+                totalAllowance += record.allowance || 0;
+                break;
+            case 'half-day':
+                row.push('HD');
+                totalPresent += 0.5;
+                totalAllowance += record.allowance || 0;
+                break;
+            case 'absent':
+                row.push('A');
+                totalAbsent += 1;
+                break;
+            default:
+                row.push('-'); // No record
+        }
     });
+
+    // Add summary data to the row
+    row.push(totalPresent, totalAbsent, totalAllowance.toLocaleString());
+
     return row;
   });
 
-  const totalPresent: (string | number)[] = ['Total Present Days'];
-  const totalAbsent: (string | number)[] = ['Total Absent Days'];
+  // Create worksheet data
+  const worksheetData = [
+    [monthYearHeader], // Merged header for month/year
+    headers,
+    ...dataRows
+  ];
 
-  employees.forEach(employee => {
-    let presentCount = 0;
-    let absentCount = 0;
-    daysInMonth.forEach(day => {
-      if (!isSunday(day)) {
-        const dateStr = format(day, 'yyyy-MM-dd');
-        const status = attendance[dateStr]?.[employee.id]?.status;
-        if (status === 'present') {
-          presentCount += 1;
-        } else if (status === 'half-day') {
-          presentCount += 0.5;
-        } else if (status === 'absent') {
-          absentCount++;
-        }
-      }
-    });
-    totalPresent.push(presentCount);
-    totalAbsent.push(absentCount);
-  });
+  const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
   
-  const worksheetData = [headers, ...dataRows, [], totalPresent, totalAbsent];
-  const attendanceWorksheet = XLSX.utils.aoa_to_sheet(worksheetData);
-  const colWidths = [{wch: 15}, ...employees.map(e => ({wch: (e.name?.length || 10) + 5}))];
-  attendanceWorksheet['!cols'] = colWidths;
+  // Define merges for the month/year header
+  worksheet['!merges'] = [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: headers.length - 1 } } // Merge cells from A1 to the last header column
+  ];
   
-  // Allowance sheet
-  const allowanceHeaders = ['Employee Name', 'Total Allowance (LKR)'];
-  const allowanceData = employees.map(employee => {
-    const totalAllowance = daysInMonth.reduce((total, day) => {
-        if (!isSunday(day)) {
-            const dateStr = format(day, 'yyyy-MM-dd');
-            const record = attendance[dateStr]?.[employee.id];
-            if (record && (record.status === 'present' || record.status === 'half-day')) {
-                const allowance = record.allowance || 0;
-                return total + allowance;
-            }
-        }
-        return total;
-    }, 0);
-    return [employee.name, totalAllowance];
-  });
-
-  const allowanceWorksheetData = [allowanceHeaders, ...allowanceData];
-  const allowanceWorksheet = XLSX.utils.aoa_to_sheet(allowanceWorksheetData);
-  allowanceWorksheet['!cols'] = [{wch: 20}, {wch: 20}];
-
-
+  // Set column widths
+  const colWidths = [
+    { wch: 20 }, // Employee Name
+    ...dayHeaders.map(() => ({ wch: 5 })), // Day columns
+    { wch: 20 }, // Total Present
+    { wch: 20 }, // Total Absent
+    { wch: 25 }  // Total Allowance
+  ];
+  worksheet['!cols'] = colWidths;
+  
   const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, attendanceWorksheet, 'Attendance');
-  XLSX.utils.book_append_sheet(workbook, allowanceWorksheet, 'Allowances');
-
-
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Attendance Report');
+  
   const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-  const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8' });
-  saveAs(blob, `SiteScribe_Report_${selectedMonth}.xlsx`);
+  const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-T' });
+  saveAs(blob, `SiteScribe_Report_${format(monthDate, 'MMM-yyyy')}.xlsx`);
 }
 
 
