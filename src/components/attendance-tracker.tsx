@@ -1,8 +1,8 @@
+
 // src/components/attendance-tracker.tsx
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { supabase } from '@/lib/supabase';
 import { useStore } from '@/lib/store';
 import {
   Card,
@@ -32,10 +32,14 @@ import { EmployeeDetailsDialog } from './employee-details-dialog';
 import { cn } from '@/lib/utils';
 import { useDebouncedCallback } from 'use-debounce';
 
-export function AttendanceTracker() {
+type AttendanceTrackerProps = {
+  isEditMode: boolean;
+};
+
+export function AttendanceTracker({ isEditMode }: AttendanceTrackerProps) {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   
-  const { employees, attendance, initialized } = useStore();
+  const { employees, attendance, pendingChanges, initialized } = useStore();
   
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
 
@@ -44,50 +48,40 @@ export function AttendanceTracker() {
   }, []);
   
   const formattedDate = useMemo(() => selectedDate ? format(selectedDate, 'yyyy-MM-dd') : '', [selectedDate]);
-  const todaysAttendance = useMemo(() => attendance[formattedDate] || {}, [attendance, formattedDate]);
-
-  const setAttendance = async (employeeId: string, date: string, status: AttendanceStatus, defaultAllowance: number) => {
-    try {
-        const currentRecord = todaysAttendance[employeeId];
-        const currentStatus = currentRecord?.status;
-
-        // If the user clicks the same status, we should clear it.
-        if (currentStatus === status) {
-            const { error } = await supabase.from('attendance')
-                .delete()
-                .match({ date: date, employee_id: employeeId });
-            if (error) throw error;
-            return;
-        }
-        
-        // Upsert the new status
-        const { error } = await supabase.from('attendance').upsert({
-            date: date,
-            employee_id: employeeId,
-            status: status,
-            allowance: currentRecord?.allowance ?? defaultAllowance
-        }, { onConflict: 'date,employee_id' });
-        if (error) throw error;
-    } catch (error) {
-      console.error("Error setting attendance:", error);
-    }
-  };
   
-  const updateAllowance = useDebouncedCallback(async (employeeId: string, date: string, allowance: number) => {
-    try {
-        const { error } = await supabase.from('attendance')
-            .update({ allowance })
-            .match({ date: date, employee_id: employeeId });
-        if (error) throw error;
-    } catch (error) {
-        console.error("Error updating allowance:", error);
-    }
+  const getRecordForEmployee = (employeeId: string) => {
+    return pendingChanges[formattedDate]?.[employeeId] || attendance[formattedDate]?.[employeeId];
+  };
+
+  const setLocalAttendance = (employeeId: string, status: AttendanceStatus, defaultAllowance: number) => {
+    const currentRecord = getRecordForEmployee(employeeId);
+    
+    useStore.getState().updatePendingChange({
+        date: formattedDate,
+        employee_id: employeeId,
+        status: currentRecord?.status === status ? null : status,
+        allowance: currentRecord?.allowance ?? defaultAllowance
+    });
+  };
+
+  const updateLocalAllowance = useDebouncedCallback((employeeId: string, allowance: number) => {
+     const currentRecord = getRecordForEmployee(employeeId);
+      useStore.getState().updatePendingChange({
+        date: formattedDate,
+        employee_id: employeeId,
+        status: currentRecord?.status || null,
+        allowance: allowance
+    });
   }, 500);
 
+  useEffect(() => {
+    // Clear pending changes when date changes
+    useStore.getState().clearPendingChanges();
+  }, [selectedDate]);
 
   if (!initialized || !selectedDate) {
     return (
-       <Card className="border-0 shadow-none">
+       <Card className="border-0 shadow-none px-0">
         <CardHeader className="px-0">
            <CardTitle>Loading Attendance...</CardTitle>
         </CardHeader>
@@ -99,7 +93,7 @@ export function AttendanceTracker() {
   }
 
   const totalDailyAllowance = employees.reduce((total, employee) => {
-    const record = todaysAttendance[employee.id];
+    const record = getRecordForEmployee(employee.id);
     if (record && (record.status === 'present' || record.status === 'half-day')) {
       const allowance = record.allowance || 0;
       return total + allowance;
@@ -107,7 +101,7 @@ export function AttendanceTracker() {
     return total;
   }, 0);
   
-  const getStatusColor = (status: AttendanceStatus | undefined, option: AttendanceStatus) => {
+  const getStatusColor = (status: AttendanceStatus | undefined | null, option: AttendanceStatus) => {
     if (status !== option) return 'bg-muted/60';
     switch (status) {
         case 'present': return 'bg-primary text-primary-foreground';
@@ -143,7 +137,7 @@ export function AttendanceTracker() {
                 mode="single"
                 selected={selectedDate}
                 onSelect={date => date && setSelectedDate(date)}
-                disabled={isSunday}
+                disabled={(date) => isSunday(date) || date > new Date()}
                 initialFocus
               />
             </PopoverContent>
@@ -163,9 +157,9 @@ export function AttendanceTracker() {
         <div className="grid gap-2">
           {employees.length > 0 ? (
             employees.map(employee => {
-                const currentRecord = todaysAttendance[employee.id];
+                const currentRecord = getRecordForEmployee(employee.id);
                 const currentStatus = currentRecord?.status;
-                const isEnabled = currentStatus === 'present' || currentStatus === 'half-day';
+                const isAllowanceEnabled = isEditMode && (currentStatus === 'present' || currentStatus === 'half-day');
                 return (
                   <div key={employee.id} className="rounded-lg border bg-secondary/40 shadow-sm">
                     <div className="p-3 flex flex-col gap-4">
@@ -182,38 +176,34 @@ export function AttendanceTracker() {
                           type="number"
                           className="w-28 h-9 text-right text-sm"
                           placeholder="LKR"
-                          disabled={!isEnabled}
+                          disabled={!isAllowanceEnabled}
                           value={currentRecord?.allowance ?? employee.daily_allowance ?? ''}
-                          onChange={(e) => {
+                           onChange={(e) => {
                             const newAllowance = parseInt(e.target.value, 10);
                             // Optimistically update the UI
-                            useStore.setState(state => ({
-                                attendance: {
-                                    ...state.attendance,
-                                    [formattedDate]: {
-                                        ...state.attendance[formattedDate],
-                                        [employee.id]: {
-                                            ...state.attendance[formattedDate]?.[employee.id],
-                                            allowance: isNaN(newAllowance) ? null : newAllowance,
-                                        }
-                                    }
-                                }
-                            }));
+                             useStore.getState().updatePendingChange({
+                                date: formattedDate,
+                                employee_id: employee.id,
+                                status: currentStatus || null,
+                                allowance: isNaN(newAllowance) ? null : newAllowance,
+                            });
                             if (!isNaN(newAllowance)) {
-                                updateAllowance(employee.id, formattedDate, newAllowance);
+                                updateLocalAllowance(employee.id, newAllowance);
                             }
                           }}
                         />
                       </div>
                     <RadioGroup
-                        value={currentStatus}
-                        onValueChange={(status) => setAttendance(employee.id, formattedDate, status as AttendanceStatus, employee.daily_allowance || 1000)}
+                        value={currentStatus || ''}
+                        onValueChange={(status) => setLocalAttendance(employee.id, status as AttendanceStatus, employee.daily_allowance || 1000)}
                         className="flex rounded-lg border border-input"
+                        disabled={!isEditMode}
                     >
                         <Label
                             htmlFor={`${employee.id}-present`}
                             className={cn(
-                                "flex-1 text-center text-xs p-2.5 rounded-l-md cursor-pointer transition-colors",
+                                "flex-1 text-center text-xs p-2.5 rounded-l-md transition-colors",
+                                isEditMode ? "cursor-pointer" : "cursor-not-allowed",
                                 getStatusColor(currentStatus, 'present')
                             )}
                         >
@@ -226,7 +216,8 @@ export function AttendanceTracker() {
                         <Label
                             htmlFor={`${employee.id}-half-day`}
                             className={cn(
-                                "flex-1 text-center text-xs p-2.5 cursor-pointer transition-colors",
+                                "flex-1 text-center text-xs p-2.5 transition-colors",
+                                isEditMode ? "cursor-pointer" : "cursor-not-allowed",
                                 getStatusColor(currentStatus, 'half-day')
                             )}
                         >
@@ -239,7 +230,8 @@ export function AttendanceTracker() {
                         <Label
                             htmlFor={`${employee.id}-absent`}
                             className={cn(
-                                "flex-1 text-center text-xs p-2.5 rounded-r-md cursor-pointer transition-colors",
+                                "flex-1 text-center text-xs p-2.5 rounded-r-md transition-colors",
+                                isEditMode ? "cursor-pointer" : "cursor-not-allowed",
                                 getStatusColor(currentStatus, 'absent')
                             )}
                         >
