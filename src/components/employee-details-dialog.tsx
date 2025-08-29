@@ -103,7 +103,7 @@ export function EmployeeDetailsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md max-h-[90vh] flex flex-col">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{employee.name}</DialogTitle>
           <DialogDescription>Attendance Overview for {format(currentMonth, 'MMMM yyyy')}</DialogDescription>
