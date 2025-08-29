@@ -21,6 +21,7 @@ import type { Employee } from '@/types';
 import { Loader2 } from 'lucide-react';
 import { Textarea } from './ui/textarea';
 import { ScrollArea } from './ui/scroll-area';
+import { cn } from '@/lib/utils';
 
 const employeeSchema = z.object({
   name: z.string()
@@ -35,6 +36,9 @@ const employeeSchema = z.object({
     .max(99, { message: "Age must be a 2-digit number." })
     .optional(),
   address: z.string().optional(),
+  daily_allowance: z.coerce.number()
+    .min(0, { message: "Daily allowance must be a positive number." })
+    .optional(),
 });
 
 
@@ -62,6 +66,7 @@ export function AddEmployeeDialog({
         phone: '',
         age: undefined,
         address: '',
+        daily_allowance: 1000,
     }
   });
 
@@ -73,9 +78,10 @@ export function AddEmployeeDialog({
               phone: employee.phone || '',
               age: employee.age || undefined,
               address: employee.address || '',
+              daily_allowance: employee.daily_allowance === null ? 1000 : employee.daily_allowance,
             });
         } else {
-            reset({ name: '', phone: '', age: undefined, address: '' });
+            reset({ name: '', phone: '', age: undefined, address: '', daily_allowance: 1000 });
         }
     }
   }, [isOpen, employee, reset]);
@@ -90,6 +96,7 @@ export function AddEmployeeDialog({
           phone: data.phone || null,
           age: data.age || null,
           address: data.address || null,
+          daily_allowance: data.daily_allowance || 1000,
       };
 
       const { error } = await supabase.from('employees').upsert(employeeData);
@@ -109,64 +116,73 @@ export function AddEmployeeDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="max-h-[85vh] flex flex-col">
+      <DialogContent className={cn("sm:max-w-md", "h-full w-full max-h-[95vh] sm:h-auto sm:max-h-[90vh]")}>
         <DialogHeader>
           <DialogTitle>{employee ? 'Edit Employee' : 'Add New Employee'}</DialogTitle>
           <DialogDescription>
             {employee ? 'Update the details for this employee.' : 'Enter the details for the new employee.'}
           </DialogDescription>
         </DialogHeader>
-        <ScrollArea className="overflow-y-auto">
-            <form onSubmit={handleSubmit(onSubmit)} id="employee-form" className="px-1 py-4">
-                <div className="grid gap-4">
-                    <div className="grid gap-2">
-                        <Label htmlFor="name">Name</Label>
-                        <Controller
-                            name="name"
-                            control={control}
-                            render={({ field }) => (
-                                <Input id="name" {...field} />
-                            )}
-                        />
-                        {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
-                    </div>
-                    <div className="grid gap-2">
-                        <Label htmlFor="phone">Phone</Label>
-                        <Controller
-                            name="phone"
-                            control={control}
-                            render={({ field }) => (
-                                <Input id="phone" type="tel" {...field} />
-                            )}
-                        />
-                        {errors.phone && <p className="text-sm text-destructive">{errors.phone.message}</p>}
-                    </div>
-                    <div className="grid gap-2">
-                        <Label htmlFor="age">Age</Label>
-                        <Controller
-                            name="age"
-                            control={control}
-                            render={({ field }) => (
-                            <Input id="age" type="number" {...field} onChange={e => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))} value={field.value ?? ''} />
-                            )}
-                        />
-                        {errors.age && <p className="text-sm text-destructive">{errors.age.message}</p>}
-                    </div>
-                    <div className="grid gap-2">
-                        <Label htmlFor="address">Address</Label>
-                        <Controller
-                            name="address"
-                            control={control}
-                            render={({ field }) => (
-                            <Textarea id="address" {...field} />
-                            )}
-                        />
-                        {errors.address && <p className="text-sm text-destructive">{errors.address.message}</p>}
-                    </div>
+        <ScrollArea className="-mx-6 flex-1 px-6">
+            <form onSubmit={handleSubmit(onSubmit)} id="employee-form" className="px-2 py-4 space-y-4">
+                <div className="space-y-2">
+                    <Label htmlFor="name">Name</Label>
+                    <Controller
+                        name="name"
+                        control={control}
+                        render={({ field }) => (
+                            <Input id="name" {...field} />
+                        )}
+                    />
+                    {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="phone">Phone</Label>
+                    <Controller
+                        name="phone"
+                        control={control}
+                        render={({ field }) => (
+                            <Input id="phone" type="tel" {...field} />
+                        )}
+                    />
+                    {errors.phone && <p className="text-sm text-destructive">{errors.phone.message}</p>}
+                </div>
+                 <div className="space-y-2">
+                    <Label htmlFor="daily_allowance">Default Daily Allowance (LKR)</Label>
+                    <Controller
+                        name="daily_allowance"
+                        control={control}
+                        render={({ field }) => (
+                        <Input id="daily_allowance" type="number" {...field} onChange={e => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))} value={field.value ?? ''} />
+                        )}
+                    />
+                    {errors.daily_allowance && <p className="text-sm text-destructive">{errors.daily_allowance.message}</p>}
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="age">Age</Label>
+                    <Controller
+                        name="age"
+                        control={control}
+                        render={({ field }) => (
+                        <Input id="age" type="number" {...field} onChange={e => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))} value={field.value ?? ''} />
+                        )}
+                    />
+                    {errors.age && <p className="text-sm text-destructive">{errors.age.message}</p>}
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="address">Address</Label>
+                    <Controller
+                        name="address"
+                        control={control}
+                        render={({ field }) => (
+                        <Textarea id="address" {...field} />
+                        )}
+                    />
+                    {errors.address && <p className="text-sm text-destructive">{errors.address.message}</p>}
                 </div>
             </form>
         </ScrollArea>
-        <DialogFooter className="mt-auto">
+        <DialogFooter className="border-t">
             <Button type="submit" form="employee-form" disabled={isSubmitting}>
                 {isSubmitting ? (
                     <>

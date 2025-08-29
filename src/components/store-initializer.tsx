@@ -12,7 +12,10 @@ function transformAttendance(records: DbAttendanceRecord[]): AttendanceData {
         if (!attendanceData[record.date]) {
             attendanceData[record.date] = {};
         }
-        attendanceData[record.date][record.employee_id] = record.status as AttendanceStatus;
+        attendanceData[record.date][record.employee_id] = {
+            status: record.status as AttendanceStatus,
+            allowance: record.allowance,
+        };
     }
     return attendanceData;
 }

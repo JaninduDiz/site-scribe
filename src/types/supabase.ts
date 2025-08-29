@@ -15,16 +15,19 @@ export type Database = {
           date: string
           employee_id: string
           status: string
+          allowance: number | null
         }
         Insert: {
           date: string
           employee_id: string
           status: string
+          allowance?: number | null
         }
         Update: {
           date?: string
           employee_id?: string
           status?: string
+          allowance?: number | null
         }
         Relationships: [
           {
@@ -44,6 +47,7 @@ export type Database = {
           age: number | null
           address: string | null
           created_at: string
+          daily_allowance: number | null
         }
         Insert: {
           id?: string
@@ -52,6 +56,7 @@ export type Database = {
           age?: number | null
           address?: string | null
           created_at?: string
+          daily_allowance?: number | null
         }
         Update: {
           id?: string
@@ -60,6 +65,7 @@ export type Database = {
           age?: number | null
           address?: string | null
           created_at?: string
+          daily_allowance?: number | null
         }
         Relationships: []
       }
