@@ -1,3 +1,4 @@
+
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 import * as XLSX from 'xlsx';
@@ -98,7 +99,7 @@ export function exportToExcel(
   XLSX.utils.book_append_sheet(workbook, worksheet, 'Attendance Report');
   
   const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-  const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-T' });
+  const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8' });
   saveAs(blob, `SiteScribe_Report_${format(monthDate, 'MMM-yyyy')}.xlsx`);
 }
 
