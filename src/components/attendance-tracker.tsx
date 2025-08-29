@@ -124,7 +124,7 @@ export function AttendanceTracker() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <CardTitle>Employee Attendance</CardTitle>
-            <CardDescription>
+            <CardDescription className="hidden sm:block">
               Mark attendance for {format(selectedDate, 'PPP')}.
             </CardDescription>
           </div>
