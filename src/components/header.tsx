@@ -4,7 +4,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { FileDown, HardHat, MoreVertical, Edit, UserPlus } from 'lucide-react';
+import { FileDown, HardHat, MoreVertical, Edit, UserPlus, X, Check } from 'lucide-react';
 import { ExportDialog } from './export-dialog';
 import {
   DropdownMenu,
@@ -36,8 +36,14 @@ export function Header({ activeTab, isEditMode, onEdit, onSubmit, onCancel, onAd
           {activeTab === 'attendance' && (
             isEditMode ? (
               <>
-                <Button onClick={onSubmit}>Submit</Button>
-                <Button variant="ghost" onClick={onCancel}>Cancel</Button>
+                <Button onClick={onSubmit} size="icon" className="sm:hidden">
+                    <Check className="h-4 w-4" />
+                </Button>
+                <Button onClick={onCancel} variant="ghost" size="icon" className="sm:hidden">
+                    <X className="h-4 w-4" />
+                </Button>
+                <Button onClick={onSubmit} className="hidden sm:inline-flex">Submit</Button>
+                <Button variant="ghost" onClick={onCancel} className="hidden sm:inline-flex">Cancel</Button>
               </>
             ) : (
               <>
@@ -62,8 +68,8 @@ export function Header({ activeTab, isEditMode, onEdit, onSubmit, onCancel, onAd
           )}
           {activeTab === 'employees' && (
             <Button onClick={onAddEmployee}>
-              <UserPlus className="mr-2 h-4 w-4" />
-              <span>Add New</span>
+              <UserPlus className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Add New</span>
             </Button>
           )}
         </div>
