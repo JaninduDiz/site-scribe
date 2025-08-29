@@ -113,12 +113,12 @@ export function AttendanceTracker({ isEditMode }: AttendanceTrackerProps) {
   }, 0);
   
   const getStatusColor = (status: AttendanceStatus | undefined | null, option: AttendanceStatus) => {
-    if (status !== option) return 'bg-muted/60';
+    if (status !== option) return 'bg-transparent';
     switch (status) {
         case 'present': return 'bg-primary text-primary-foreground';
         case 'half-day': return 'bg-accent text-accent-foreground';
         case 'absent': return 'bg-destructive text-destructive-foreground';
-        default: return 'bg-muted/60';
+        default: return 'bg-transparent';
     }
   }
 
@@ -207,13 +207,13 @@ export function AttendanceTracker({ isEditMode }: AttendanceTrackerProps) {
                     <RadioGroup
                         value={currentStatus || ''}
                         onValueChange={(status) => setLocalAttendance(employee.id, status as AttendanceStatus, employee.daily_allowance || 1000)}
-                        className="flex rounded-lg border border-input"
+                        className="flex rounded-lg border bg-muted/60"
                         disabled={!isEditMode}
                     >
                         <Label
                             htmlFor={`${employee.id}-present`}
                             className={cn(
-                                "flex-1 text-center text-xs p-2.5 rounded-l-md transition-colors",
+                                "flex-1 text-center text-xs p-2 rounded-l-md transition-colors",
                                 isEditMode ? "cursor-pointer" : "cursor-not-allowed",
                                 getStatusColor(currentStatus, 'present')
                             )}
@@ -222,12 +222,12 @@ export function AttendanceTracker({ isEditMode }: AttendanceTrackerProps) {
                         </Label>
                         <RadioGroupItem value="present" id={`${employee.id}-present`} className="sr-only" />
                         
-                        <div className="border-l border-input h-auto"></div>
+                        <div className={cn("border-l border-input h-auto", getStatusColor(currentStatus, 'present') !== 'bg-transparent' && 'border-transparent' )}></div>
 
                         <Label
                             htmlFor={`${employee.id}-half-day`}
                             className={cn(
-                                "flex-1 text-center text-xs p-2.5 transition-colors",
+                                "flex-1 text-center text-xs p-2 transition-colors",
                                 isEditMode ? "cursor-pointer" : "cursor-not-allowed",
                                 getStatusColor(currentStatus, 'half-day')
                             )}
@@ -236,12 +236,12 @@ export function AttendanceTracker({ isEditMode }: AttendanceTrackerProps) {
                         </Label>
                         <RadioGroupItem value="half-day" id={`${employee.id}-half-day`} className="sr-only" />
 
-                        <div className="border-l border-input h-auto"></div>
+                        <div className={cn("border-l border-input h-auto", getStatusColor(currentStatus, 'half-day') !== 'bg-transparent' && 'border-transparent' )}></div>
 
                         <Label
                             htmlFor={`${employee.id}-absent`}
                             className={cn(
-                                "flex-1 text-center text-xs p-2.5 rounded-r-md transition-colors",
+                                "flex-1 text-center text-xs p-2 rounded-r-md transition-colors",
                                 isEditMode ? "cursor-pointer" : "cursor-not-allowed",
                                 getStatusColor(currentStatus, 'absent')
                             )}
