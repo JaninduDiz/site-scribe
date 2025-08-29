@@ -1,10 +1,9 @@
-
 // src/components/header.tsx
 'use client';
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { FileDown, HardHat, MoreVertical, Edit } from 'lucide-react';
+import { FileDown, HardHat, MoreVertical, Edit, X } from 'lucide-react';
 import { ExportDialog } from './export-dialog';
 import {
   DropdownMenu,
@@ -17,9 +16,10 @@ type HeaderProps = {
   isEditMode: boolean;
   onEdit: () => void;
   onSubmit: () => void;
+  onCancel: () => void;
 };
 
-export function Header({ isEditMode, onEdit, onSubmit }: HeaderProps) {
+export function Header({ isEditMode, onEdit, onSubmit, onCancel }: HeaderProps) {
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
 
   return (
@@ -31,7 +31,10 @@ export function Header({ isEditMode, onEdit, onSubmit }: HeaderProps) {
         </div>
         <div className="ml-auto flex items-center gap-2">
           {isEditMode ? (
-            <Button onClick={onSubmit}>Submit</Button>
+            <>
+              <Button onClick={onSubmit}>Submit</Button>
+              <Button variant="ghost" onClick={onCancel}>Cancel</Button>
+            </>
           ) : (
             <>
               <Button variant="ghost" size="icon" onClick={onEdit}>

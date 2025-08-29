@@ -20,6 +20,10 @@ export default function Home() {
 
   const handleSaveChanges = async () => {
     const pendingChanges = useStore.getState().pendingChanges;
+    if (Object.keys(pendingChanges).length === 0) {
+      setIsEditMode(false);
+      return;
+    }
     const { data, error } = await supabase.from('attendance').upsert(Object.values(pendingChanges));
 
     if (error) {
@@ -38,6 +42,11 @@ export default function Home() {
       setIsEditMode(false);
     }
   };
+  
+  const handleCancel = () => {
+    useStore.getState().clearPendingChanges();
+    setIsEditMode(false);
+  };
 
 
   return (
@@ -47,6 +56,7 @@ export default function Home() {
         isEditMode={isEditMode}
         onEdit={() => setIsEditMode(true)}
         onSubmit={handleSaveChanges}
+        onCancel={handleCancel}
       />
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col flex-1">
         <main className="flex-1 overflow-y-auto pb-24">
