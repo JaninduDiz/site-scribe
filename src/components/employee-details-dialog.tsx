@@ -75,7 +75,10 @@ export function EmployeeDetailsDialog({
       if (isSameMonth(date, currentMonth)) {
         if(record.status === 'present') monthlyPresent++;
         if(record.status === 'absent') monthlyAbsent++;
-        if(record.status === 'half-day') monthlyHalfDay++;
+        if(record.status === 'half-day') {
+            monthlyHalfDay++;
+            monthlyPresent += 0.5; // for calculation
+        }
         modifiers[record.status]?.push(date);
 
         if(record.status === 'present' || record.status === 'half-day') {
@@ -108,7 +111,7 @@ export function EmployeeDetailsDialog({
           <DialogTitle>{employee.name}</DialogTitle>
           <DialogDescription>Attendance Overview for {format(currentMonth, 'MMMM yyyy')}</DialogDescription>
         </DialogHeader>
-        <ScrollArea className="-mx-6 px-6">
+        <ScrollArea className="-mx-6 flex-1 px-6">
         <div className="flex justify-between items-center py-4">
             <Button variant="outline" size="icon" onClick={goToPreviousMonth}>
               <ChevronLeft className="h-4 w-4" />
@@ -118,14 +121,16 @@ export function EmployeeDetailsDialog({
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
-        <Calendar
-          mode="single"
-          month={currentMonth}
-          onMonthChange={setCurrentMonth}
-          modifiers={modifiers}
-          modifiersClassNames={modifiersClassNames}
-          className="rounded-md border"
-        />
+        <div className="flex justify-center">
+            <Calendar
+              mode="single"
+              month={currentMonth}
+              onMonthChange={setCurrentMonth}
+              modifiers={modifiers}
+              modifiersClassNames={modifiersClassNames}
+              className="rounded-md border"
+            />
+        </div>
         <div className="space-y-4 text-sm py-4">
             <div className="font-semibold">Monthly Summary:</div>
             <div className="flex gap-2 flex-wrap">
