@@ -113,12 +113,12 @@ export function AttendanceTracker({ isEditMode }: AttendanceTrackerProps) {
   }, 0);
   
   const getStatusColor = (status: AttendanceStatus | undefined | null, option: AttendanceStatus) => {
-    if (status !== option) return 'bg-transparent';
+    if (status !== option) return 'bg-transparent text-muted-foreground';
     switch (status) {
         case 'present': return 'bg-primary text-primary-foreground';
         case 'half-day': return 'bg-accent text-accent-foreground';
         case 'absent': return 'bg-destructive text-destructive-foreground';
-        default: return 'bg-transparent';
+        default: return 'bg-transparent text-muted-foreground';
     }
   }
 
@@ -207,7 +207,7 @@ export function AttendanceTracker({ isEditMode }: AttendanceTrackerProps) {
                     <RadioGroup
                         value={currentStatus || ''}
                         onValueChange={(status) => setLocalAttendance(employee.id, status as AttendanceStatus, employee.daily_allowance || 1000)}
-                        className="flex rounded-lg border bg-muted/60"
+                        className="flex rounded-lg border bg-muted"
                         disabled={!isEditMode}
                     >
                         <Label
