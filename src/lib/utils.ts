@@ -3,7 +3,7 @@ import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isValid, isSunday, getDaysInMonth } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isValid, getDaysInMonth } from 'date-fns';
 import type { Employee, AttendanceData } from '@/types';
 
 export function cn(...inputs: ClassValue[]) {
@@ -36,11 +36,6 @@ export function exportToExcel(
     let totalAllowance = 0;
 
     daysInMonth.forEach(day => {
-        if (isSunday(day)) {
-            row.push('SUN');
-            return;
-        }
-
         const dateStr = format(day, 'yyyy-MM-dd');
         const record = attendance[dateStr]?.[employee.id];
         const status = record?.status;

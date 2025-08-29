@@ -26,7 +26,7 @@ import {
   Loader2,
   Wallet,
 } from 'lucide-react';
-import { format, isSunday } from 'date-fns';
+import { format } from 'date-fns';
 import type { Employee, AttendanceData, AttendanceStatus } from '@/types';
 import { EmployeeDetailsDialog } from './employee-details-dialog';
 import { cn } from '@/lib/utils';
@@ -148,7 +148,7 @@ export function AttendanceTracker({ isEditMode }: AttendanceTrackerProps) {
                 mode="single"
                 selected={selectedDate}
                 onSelect={date => date && setSelectedDate(date)}
-                disabled={(date) => isSunday(date) || date > new Date()}
+                disabled={(date) => date > new Date()}
                 initialFocus
               />
             </PopoverContent>
