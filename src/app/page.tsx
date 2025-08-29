@@ -6,17 +6,20 @@ import { Header } from '@/components/header';
 import { AttendanceTracker } from '@/components/attendance-tracker';
 import { EmployeeList } from '@/components/employee-list';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, CalendarCheck } from 'lucide-react';
+import { Users, CalendarCheck, UserPlus } from 'lucide-react';
 import { useState } from 'react';
 import { StoreInitializer } from '@/components/store-initializer';
 import { useStore } from '@/lib/store';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import { AddEmployeeDialog } from '@/components/add-employee-dialog';
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState('attendance');
   const [isEditMode, setIsEditMode] = useState(false);
   const { toast } = useToast();
+  const [isAddEmployeeDialogOpen, setIsAddEmployeeDialogOpen] = useState(false);
 
   const handleSaveChanges = async () => {
     const pendingChanges = useStore.getState().pendingChanges;
@@ -52,11 +55,13 @@ export default function Home() {
   return (
     <div className="flex min-h-screen w-full flex-col" style={{ paddingTop: 'env(safe-area-inset-top)'}}>
       <StoreInitializer />
-      <Header 
+       <Header
+        activeTab={activeTab}
         isEditMode={isEditMode}
         onEdit={() => setIsEditMode(true)}
         onSubmit={handleSaveChanges}
         onCancel={handleCancel}
+        onAddEmployee={() => setIsAddEmployeeDialogOpen(true)}
       />
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col flex-1">
         <main className="flex-1 overflow-y-auto pb-24">
@@ -64,7 +69,7 @@ export default function Home() {
                 <AttendanceTracker isEditMode={isEditMode} />
             </TabsContent>
             <TabsContent value="employees" className="p-4 md:p-6 pt-4">
-                <EmployeeList />
+                <EmployeeList onAddEmployee={() => setIsAddEmployeeDialogOpen(true)}/>
             </TabsContent>
         </main>
         <TabsList className="grid w-full grid-cols-2 h-20 rounded-none fixed bottom-0 z-20" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 0.5rem)'}}>
@@ -78,6 +83,11 @@ export default function Home() {
             </TabsTrigger>
         </TabsList>
       </Tabs>
+      <AddEmployeeDialog
+        isOpen={isAddEmployeeDialogOpen}
+        setIsOpen={setIsAddEmployeeDialogOpen}
+        employee={null}
+      />
     </div>
   );
 }

@@ -1,3 +1,4 @@
+
 // src/components/employee-list.tsx
 'use client';
 
@@ -28,7 +29,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 
-export function EmployeeList() {
+export function EmployeeList({ onAddEmployee }: { onAddEmployee: () => void }) {
   const { employees, initialized } = useStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -62,8 +63,8 @@ export function EmployeeList() {
 
   if (!initialized) {
     return (
-      <Card>
-        <CardHeader>
+      <Card className="border-0 shadow-none">
+        <CardHeader className="px-0">
           <CardTitle>Loading Employees...</CardTitle>
         </CardHeader>
         <CardContent className="flex justify-center items-center p-8">
@@ -75,18 +76,15 @@ export function EmployeeList() {
 
   return (
     <>
-      <Card>
-        <CardHeader>
+      <Card className="border-0 shadow-none">
+        <CardHeader className="p-0">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <CardTitle>Employee Directory</CardTitle>
-              <CardDescription>
+              <CardDescription className="hidden sm:block">
                 View, add, or edit employee information.
               </CardDescription>
             </div>
-            <Button onClick={handleAddNew}>
-              <UserPlus className="mr-2 h-4 w-4" /> Add New Employee
-            </Button>
           </div>
           <div className="mt-4 relative flex-1">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -99,12 +97,12 @@ export function EmployeeList() {
             />
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="grid gap-4">
+        <CardContent className="p-0 mt-4">
+          <div className="grid gap-2">
             {filteredEmployees.length > 0 ? (
               filteredEmployees.map((employee) => (
-                <Card key={employee.id}>
-                  <CardContent className="p-4 flex items-center justify-between">
+                <Card key={employee.id} className="shadow-sm">
+                  <CardContent className="p-3 flex items-center justify-between">
                     <div className="flex items-center gap-4">
                        <User className="h-6 w-6 text-muted-foreground" />
                        <div className="text-sm">
@@ -142,7 +140,7 @@ export function EmployeeList() {
                 </Card>
               ))
             ) : (
-              <p className="text-muted-foreground text-center">
+              <p className="text-muted-foreground text-center py-4">
                 No employees found. Add one to get started.
               </p>
             )}
