@@ -26,17 +26,16 @@ ALTER TABLE public.employees ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.attendance ENABLE ROW LEVEL SECURITY;
 
 -- Create policies to allow public read access to the data.
--- You might want to restrict this further based on your app's needs.
--- For a production app, you'd likely want to base this on user authentication.
 CREATE POLICY "Allow public read access" ON public.employees FOR SELECT USING (true);
 CREATE POLICY "Allow public read access" ON public.attendance FOR SELECT USING (true);
 
--- Create policies to allow authenticated users to perform all actions.
--- This is a common setup, but you should tailor policies to your security requirements.
-CREATE POLICY "Allow all access for authenticated users" ON public.employees FOR ALL
-USING (auth.role() = 'authenticated')
-WITH CHECK (auth.role() = 'authenticated');
+-- Create policies to allow anonymous users to insert, update, and delete.
+-- For a public app, we use the 'anon' role.
+-- For an app with logins, you would use 'authenticated'.
+CREATE POLICY "Allow anonymous user access to insert" ON public.employees FOR INSERT WITH CHECK (auth.role() = 'anon');
+CREATE POLICY "Allow anonymous user access to update" ON public.employees FOR UPDATE USING (auth.role() = 'anon');
+CREATE POLICY "Allow anonymous user access to delete" ON public.employees FOR DELETE USING (auth.role() = 'anon');
 
-CREATE POLICY "Allow all access for authenticated users" ON public.attendance FOR ALL
-USING (auth.role() = 'authenticated')
-WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Allow anonymous user access to insert" ON public.attendance FOR INSERT WITH CHECK (auth.role() = 'anon');
+CREATE POLICY "Allow anonymous user access to update" ON public.attendance FOR UPDATE USING (auth.role() = 'anon');
+CREATE POLICY "Allow anonymous user access to delete" ON public.attendance FOR DELETE USING (auth.role() = 'anon');
