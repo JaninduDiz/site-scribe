@@ -7,21 +7,46 @@ on:
   workflow_dispatch:
 
 jobs:
-  ping:
+  ping-prod:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Ping Supabase via PostgREST
+      - name: Ping Production Supabase via PostgREST
         env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_URL: ${{ secrets.PROD_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.PROD_SUPABASE_SERVICE_ROLE_KEY }}
         run: |
+          if [ -z "$SUPABASE_URL" ]; then
+            echo "PROD_SUPABASE_URL secret not set. Skipping ping."
+            exit 0
+          fi
           response=$(curl -s \
             -X GET "${SUPABASE_URL}/rest/v1/" \
             -H "apikey: ${SUPABASE_SERVICE_ROLE_KEY}" \
             -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}")
           if [ -z "$response" ]; then
-            echo "Error: empty response when pinging." >&2
+            echo "Error: empty response when pinging production." >&2
             exit 1
           fi
-          echo "Successful ping: $response"
+          echo "Successful production ping: $response"
+
+  ping-dev:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Development Supabase via PostgREST
+        env:
+          SUPABASE_URL: ${{ secrets.DEV_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.DEV_SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ]; then
+            echo "DEV_SUPABASE_URL secret not set. Skipping ping."
+            exit 0
+          fi
+          response=$(curl -s \
+            -X GET "${SUPABASE_URL}/rest/v1/" \
+            -H "apikey: ${SUPABASE_SERVICE_ROLE_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}")
+          if [ -z "$response" ]; then
+            echo "Error: empty response when pinging development." >&2
+            exit 1
+          fi
+          echo "Successful development ping: $response"
