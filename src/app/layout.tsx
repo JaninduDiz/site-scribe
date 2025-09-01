@@ -6,7 +6,11 @@ import { Toaster } from "@/components/ui/toaster";
 export const metadata: Metadata = {
   title: 'SiteScribe',
   description: 'An employee directory and attendance tracker for construction sites.',
-  manifest: '/manifest.ts',
+  manifest: '/manifest.json',
+  icons: {
+    icon: '/favicon.ico',
+    apple: '/apple-touch-icon.png',
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',

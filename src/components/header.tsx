@@ -1,10 +1,10 @@
-
 // src/components/header.tsx
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { FileDown, HardHat, MoreVertical, Edit, UserPlus, X, Check } from 'lucide-react';
+import { FileDown, MoreVertical, Edit, UserPlus, X, Check } from 'lucide-react';
 import { ExportDialog } from './export-dialog';
 import {
   DropdownMenu,
@@ -29,7 +29,7 @@ export function Header({ activeTab, isEditMode, onEdit, onSubmit, onCancel, onAd
     <>
       <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background/80 backdrop-blur-sm px-4 md:px-6">
         <div className="flex items-center gap-2 font-semibold">
-          <HardHat className="h-6 w-6 text-primary" />
+           <Image src="/icon-256x256.png" alt="SiteScribe Logo" width={32} height={32} className="h-8 w-8" />
           <span className="text-xl">SiteScribe</span>
         </div>
         <div className="ml-auto flex items-center gap-2">
@@ -67,10 +67,16 @@ export function Header({ activeTab, isEditMode, onEdit, onSubmit, onCancel, onAd
             )
           )}
           {activeTab === 'employees' && (
-            <Button onClick={onAddEmployee}>
-              <UserPlus className="h-4 w-4 sm:mr-2" />
-              <span className="hidden sm:inline">Add New</span>
-            </Button>
+            <>
+              <Button onClick={onAddEmployee} size="icon" className="sm:hidden">
+                  <UserPlus className="h-4 w-4" />
+                  <span className="sr-only">Add New Employee</span>
+              </Button>
+              <Button onClick={onAddEmployee} className="hidden sm:inline-flex">
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Add New
+              </Button>
+            </>
           )}
         </div>
       </header>

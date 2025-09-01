@@ -113,12 +113,12 @@ export function AttendanceTracker({ isEditMode }: AttendanceTrackerProps) {
   }, 0);
   
   const getStatusColor = (status: AttendanceStatus | undefined | null, option: AttendanceStatus) => {
-    if (status !== option) return 'bg-transparent text-muted-foreground';
+    if (status !== option) return 'bg-transparent text-muted-foreground hover:bg-secondary/40';
     switch (status) {
         case 'present': return 'bg-primary text-primary-foreground';
         case 'half-day': return 'bg-accent text-accent-foreground';
         case 'absent': return 'bg-destructive text-destructive-foreground';
-        default: return 'bg-transparent text-muted-foreground';
+        default: return 'bg-transparent text-muted-foreground hover:bg-secondary/40';
     }
   }
 
@@ -171,6 +171,12 @@ export function AttendanceTracker({ isEditMode }: AttendanceTrackerProps) {
                 const currentRecord = getRecordForEmployee(employee.id);
                 const currentStatus = currentRecord?.status;
                 const isAllowanceEnabled = isEditMode && (currentStatus === 'present' || currentStatus === 'half-day');
+                
+                const isPresent = currentStatus === 'present';
+                const isHalfDay = currentStatus === 'half-day';
+                const isAbsent = currentStatus === 'absent';
+                const noStatus = !currentStatus;
+                
                 return (
                   <div key={employee.id} className="rounded-lg border bg-secondary/40 shadow-sm">
                     <div className="p-3 flex flex-col gap-4">
@@ -207,13 +213,13 @@ export function AttendanceTracker({ isEditMode }: AttendanceTrackerProps) {
                     <RadioGroup
                         value={currentStatus || ''}
                         onValueChange={(status) => setLocalAttendance(employee.id, status as AttendanceStatus, employee.daily_allowance || 1000)}
-                        className="flex rounded-lg border bg-muted"
+                        className="flex rounded-lg border bg-muted p-0.5"
                         disabled={!isEditMode}
                     >
                         <Label
                             htmlFor={`${employee.id}-present`}
                             className={cn(
-                                "flex-1 text-center text-xs p-2 rounded-l-md transition-colors",
+                                "flex-1 text-center text-xs p-2 rounded-md transition-colors",
                                 isEditMode ? "cursor-pointer" : "cursor-not-allowed",
                                 getStatusColor(currentStatus, 'present')
                             )}
@@ -222,12 +228,12 @@ export function AttendanceTracker({ isEditMode }: AttendanceTrackerProps) {
                         </Label>
                         <RadioGroupItem value="present" id={`${employee.id}-present`} className="sr-only" />
                         
-                        <div className={cn("border-l border-input h-auto", getStatusColor(currentStatus, 'present') !== 'bg-transparent' && 'border-transparent' )}></div>
+                        <div className={cn("w-px bg-border transition-opacity", noStatus || isPresent ? 'opacity-0' : 'opacity-100')}></div>
 
                         <Label
                             htmlFor={`${employee.id}-half-day`}
                             className={cn(
-                                "flex-1 text-center text-xs p-2 transition-colors",
+                                "flex-1 text-center text-xs p-2 rounded-md transition-colors",
                                 isEditMode ? "cursor-pointer" : "cursor-not-allowed",
                                 getStatusColor(currentStatus, 'half-day')
                             )}
@@ -236,12 +242,12 @@ export function AttendanceTracker({ isEditMode }: AttendanceTrackerProps) {
                         </Label>
                         <RadioGroupItem value="half-day" id={`${employee.id}-half-day`} className="sr-only" />
 
-                        <div className={cn("border-l border-input h-auto", getStatusColor(currentStatus, 'half-day') !== 'bg-transparent' && 'border-transparent' )}></div>
+                        <div className={cn("w-px bg-border transition-opacity", noStatus || isHalfDay ? 'opacity-0' : 'opacity-100')}></div>
 
                         <Label
                             htmlFor={`${employee.id}-absent`}
                             className={cn(
-                                "flex-1 text-center text-xs p-2 rounded-r-md transition-colors",
+                                "flex-1 text-center text-xs p-2 rounded-md transition-colors",
                                 isEditMode ? "cursor-pointer" : "cursor-not-allowed",
                                 getStatusColor(currentStatus, 'absent')
                             )}
