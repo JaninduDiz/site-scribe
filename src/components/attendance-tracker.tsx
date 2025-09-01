@@ -228,7 +228,7 @@ export function AttendanceTracker({ isEditMode }: AttendanceTrackerProps) {
                         </Label>
                         <RadioGroupItem value="present" id={`${employee.id}-present`} className="sr-only" />
                         
-                        <div className={cn("w-px bg-border", noStatus || isPresent || isHalfDay ? 'opacity-0' : 'opacity-100')}></div>
+                        <div className={cn("w-px bg-border transition-opacity", noStatus || isPresent ? 'opacity-0' : 'opacity-100')}></div>
 
                         <Label
                             htmlFor={`${employee.id}-half-day`}
@@ -242,7 +242,7 @@ export function AttendanceTracker({ isEditMode }: AttendanceTrackerProps) {
                         </Label>
                         <RadioGroupItem value="half-day" id={`${employee.id}-half-day`} className="sr-only" />
 
-                        <div className={cn("w-px bg-border", noStatus || isHalfDay || isAbsent ? 'opacity-0' : 'opacity-100')}></div>
+                        <div className={cn("w-px bg-border transition-opacity", noStatus || isHalfDay ? 'opacity-0' : 'opacity-100')}></div>
 
                         <Label
                             htmlFor={`${employee.id}-absent`}
